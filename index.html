@@ -2,9 +2,73 @@
 <html>
 <head>
 	<title>Pente</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+
+	<style>
+		body {
+			margin-top:30px;
+		}
+
+		#gameArea {
+			display:none;
+		}
+	</style>
 </head>
 
 <body>
-	Hello there
+	<div class="container">
+		<div id="loginArea" class="row">
+			<div class="col-md-8">
+				<form id="loginForm">
+					<div class="form-group">
+						<label>Enter player name</label>
+						<input class="form-control" id="username" />
+						<br />
+						<input type="submit" class="btn btn-primary" value="Enter" />
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div id="gameArea" class="row">
+			<div id="users">
+			</div>
+		</div>
+	</div>
+
+	<script>
+		$(function() {
+			var socket = io.connect();
+
+			var $loginArea = $('#loginArea');
+			var $loginForm = $('#loginForm');
+			var $gameArea = $('#gameArea');
+			var $username = $('#username');
+			var $users = $('#users');
+
+			$loginForm.submit(function(e) {
+				e.preventDefault();
+
+				// push username to server
+				username = $username.val();
+				if (username === '') username = 'Anonymous';
+				socket.emit('add user', username);
+				$username.val('');
+
+				// move from login screen to game screen
+				$loginArea.css('display', 'none');
+				$gameArea.css('display', 'block');
+			});
+
+			socket.on('update users', function(data) {
+				$users.empty();
+				for (i = 0; i < data.msg.length; i++) {
+					$users.append(data.msg[i]+"<br>");
+				}
+			});
+		});
+	</script>
 </body>
 </html>
