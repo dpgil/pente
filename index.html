@@ -66,7 +66,7 @@
 				// push username to server
 				username = $username.val();
 				if (username === '') username = 'Anonymous';
-				socket.emit('add user', username);
+				socket.emit('join lobby', username);
 				$username.val('');
 
 				// move from login screen to game screen
