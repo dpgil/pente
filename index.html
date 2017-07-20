@@ -38,6 +38,7 @@
 
 		<div id="lobbyArea" class="row">
 			<div id="users">
+				Waiting for opponent...
 			</div>
 		</div>
 
@@ -73,13 +74,6 @@
 				$lobbyArea.css('display', 'block');
 			});
 
-			socket.on('update users', function(data) {
-				$users.empty();
-				for (i = 0; i < data.msg.length; i++) {
-					$users.append(data.msg[i]+"<br>");
-				}
-			});
-
 			// Got paired with another player in the lobby
 			socket.on('found match', function(data) {
 				// Switch to the game area page
@@ -92,7 +86,7 @@
 			socket.on('opponent left', function(data) {
 				$message.empty();
 				$message.append(data.msg);
-			})
+			});
 		});
 	</script>
 </body>

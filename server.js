@@ -3,7 +3,6 @@ var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 
-var users = [];
 var unpairedConnections = []; // socket ids of players not yet assigned to a game
 var socketIdToUsername = {};
 var lastGameId = 0; // most recent game id assigned
@@ -26,22 +25,15 @@ io.sockets.on('connection', function(socket) {
 
 	socket.on('add user', function(username) {
 		socketIdToUsername[socket.id] = username;
-		users.push(username);
-		io.to('lobby').emit('update users', {msg: users});
-		//console.log(users);
-		//console.log(socket)
-		console.log(socket.id);
 		tryPairUser();
 	});
 
 	socket.on('disconnect', function(data) {
 		if (contains(unpairedConnections, socket)) {
-			// Player is in the lobby
-			users.splice(users.indexOf(socketIdToUsername[socket.id]), 1);
+			// Player was in the lobby, no longer available to pair
 			unpairedConnections.splice(unpairedConnections.indexOf(socket), 1);
-			io.to('lobby').emit('update users', {msg: users});
 		} else {
-			// Player is in a game
+			// Player was in a game
 			// TODO notify their opponent the player left
 			var gameId = socketIdToGameId[socket.id];
 			var message = socketIdToUsername[socket.id] + ' left the game.';
@@ -64,9 +56,7 @@ io.sockets.on('connection', function(socket) {
 	function matchPlayers(player1, player2) {
 		// Removes them both from out unpaired list
 		unpairedConnections.splice(unpairedConnections.indexOf(player1), 1);
-		users.splice(users.indexOf(socketIdToUsername[player1.id]), 1);
 		unpairedConnections.splice(unpairedConnections.indexOf(player2), 1);
-		users.splice(users.indexOf(socketIdToUsername[player2.id]), 1);
 
 		// Leave the lobby room
 		player1.leave('lobby');
