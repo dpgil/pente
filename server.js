@@ -40,8 +40,7 @@ io.sockets.on('connection', function(socket) {
 			// Player was in a game
 			// TODO notify their opponent the player left
 			var gameId = socketIdToGameId[socket.id];
-			var message = socketIdToUsername[socket.id] + ' left the game.';
-			io.to(gameId).emit('opponent left', {msg: message});
+			io.to(gameId).emit('opponent left');
 		}
 
 		console.log('Socket disconnected');

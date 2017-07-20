@@ -60,6 +60,8 @@
 			var $username = $('#username');
 			var $users = $('#users');
 
+			var opponent = '';
+
 			$loginForm.submit(function(e) {
 				e.preventDefault();
 
@@ -80,12 +82,13 @@
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
 
-				$message.append('Paired with user '+data.msg);
+				opponent = data.msg;
+				$message.append('Paired with user '+opponent);
 			});
 
 			socket.on('opponent left', function(data) {
 				$message.empty();
-				$message.append(data.msg);
+				$message.append(opponent + ' has left the game');
 			});
 		});
 	</script>
