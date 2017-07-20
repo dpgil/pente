@@ -11,6 +11,10 @@
 			margin-top:30px;
 		}
 
+		#lobbyArea {
+			display:none;
+		}
+
 		#gameArea {
 			display:none;
 		}
@@ -32,8 +36,13 @@
 			</div>
 		</div>
 
-		<div id="gameArea" class="row">
+		<div id="lobbyArea" class="row">
 			<div id="users">
+			</div>
+		</div>
+
+		<div id="gameArea" class="row">
+			<div id="message">
 			</div>
 		</div>
 	</div>
@@ -44,7 +53,9 @@
 
 			var $loginArea = $('#loginArea');
 			var $loginForm = $('#loginForm');
+			var $lobbyArea = $('#lobbyArea');
 			var $gameArea = $('#gameArea');
+			var $message = $('#message');
 			var $username = $('#username');
 			var $users = $('#users');
 
@@ -59,7 +70,7 @@
 
 				// move from login screen to game screen
 				$loginArea.css('display', 'none');
-				$gameArea.css('display', 'block');
+				$lobbyArea.css('display', 'block');
 			});
 
 			socket.on('update users', function(data) {
@@ -68,6 +79,20 @@
 					$users.append(data.msg[i]+"<br>");
 				}
 			});
+
+			// Got paired with another player in the lobby
+			socket.on('found match', function(data) {
+				// Switch to the game area page
+				$lobbyArea.css('display', 'none');
+				$gameArea.css('display', 'block');
+
+				$message.append('Paired with user '+data.msg);
+			});
+
+			socket.on('opponent left', function(data) {
+				$message.empty();
+				$message.append(data.msg);
+			})
 		});
 	</script>
 </body>
