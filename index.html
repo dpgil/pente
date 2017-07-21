@@ -61,6 +61,7 @@
 			var $users = $('#users');
 
 			var opponent = '';
+			var currentTurn = false;
 
 			$loginForm.submit(function(e) {
 				e.preventDefault();
@@ -83,7 +84,9 @@
 				$gameArea.css('display', 'block');
 
 				opponent = data.msg;
-				$message.append('Paired with user '+opponent);
+				currentTurn = data.start;
+				$message.append('Paired with user '+opponent+'\n');
+				$message.append(currentTurn ? 'You start!' : 'Waiting for opponent move');
 			});
 
 			socket.on('opponent left', function(data) {

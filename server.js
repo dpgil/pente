@@ -38,7 +38,6 @@ io.sockets.on('connection', function(socket) {
 			unpairedConnections.splice(unpairedConnections.indexOf(socket), 1);
 		} else {
 			// Player was in a game
-			// TODO notify their opponent the player left
 			var gameId = socketIdToGameId[socket.id];
 			io.to(gameId).emit('opponent left');
 		}
@@ -74,8 +73,8 @@ io.sockets.on('connection', function(socket) {
 		opponent.join(gameId);
 
 		// Tells each player we found a match and their opponent's username
-		socket.emit('found match', {msg: socketIdToUsername[opponent.id]});
-		opponent.emit('found match', {msg: socketIdToUsername[socket.id]});
+		socket.emit('found match', {msg: socketIdToUsername[opponent.id], start: true});
+		opponent.emit('found match', {msg: socketIdToUsername[socket.id], start: false});
 	}
 
 	// Tries to find a game match for the user that just connected
