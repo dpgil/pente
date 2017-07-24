@@ -13,6 +13,8 @@ server.listen(app.get('port'), function() {
 	console.log('Server is running on port ' + app.get('port'));
 });
 
+app.use(express.static(__dirname + '/public'));
+
 app.get('/', function(req, res) {
 	res.sendFile(__dirname + '/index.html');
 });
@@ -43,6 +45,19 @@ io.sockets.on('connection', function(socket) {
 		}
 
 		console.log('Socket disconnected');
+	});
+
+	// Receives a game move from a player
+	// 1. Updates the game state
+	// 2. Notifies players of move 
+	socket.on('place piece', function(data) {
+		// get player game id
+		var gameId = socketIdToGameId[socket.id];
+
+		// TODO update the game state
+
+		// transmit change to players
+		io.to(gameId).emit('piece placed', data);
 	});
 
 	// Array contains helper function

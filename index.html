@@ -5,6 +5,7 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
 	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
+	<script src="/wgo.js"></script>
 
 	<style>
 		body {
@@ -43,7 +44,10 @@
 		</div>
 
 		<div id="gameArea" class="row">
-			<div id="message">
+<!-- 			<div id="message">
+			</div> -->
+
+			<div id="board">
 			</div>
 		</div>
 	</div>
@@ -56,12 +60,14 @@
 			var $loginForm = $('#loginForm');
 			var $lobbyArea = $('#lobbyArea');
 			var $gameArea = $('#gameArea');
-			var $message = $('#message');
+			//var $message = $('#message');
 			var $username = $('#username');
 			var $users = $('#users');
+			//var $board = $('#board');
 
 			var opponent = '';
-			var currentTurn = false;
+			var pieceColor = '';
+			var gameBoard;
 
 			$loginForm.submit(function(e) {
 				e.preventDefault();
@@ -84,14 +90,86 @@
 				$gameArea.css('display', 'block');
 
 				opponent = data.msg;
-				currentTurn = data.start;
-				$message.append('Paired with user '+opponent+'\n');
-				$message.append(currentTurn ? 'You start!' : 'Waiting for opponent move');
+				//$message.append('Paired with user '+opponent+'\n');
+
+				pieceColor = data.start ? "white" : "black";
+
+				setupGameBoard();
 			});
 
 			socket.on('opponent left', function(data) {
-				$message.empty();
-				$message.append(opponent + ' has left the game');
+				//$message.empty();
+				//$message.append(opponent + ' has left the game');
+			});
+
+			// Returns the indices of the position where the click was performed
+			// Adjusts offset relative to the board's position on the page
+			// and scales the coordinates to be (0, board.size) to conform to
+			// WGo.js using array indices rather than float coordinates
+			function getClickIndices(canvas, board, absX, absY) {
+				var rect = canvas.getBoundingClientRect();
+
+				var totalWidth = 600;
+				var boardWidth = .784 * totalWidth;
+				var boardBorder = .108 * totalWidth;
+
+				var relX = absX - boardBorder - rect.left;
+				var relY = absY - boardBorder - rect.top;
+
+				var x = Math.round((relX / boardWidth) * board.size);
+				var y = Math.round((relY / boardWidth) * board.size);
+
+				console.log('border: '+boardBorder);
+				console.log('Absolute: '+absX+' '+absY);
+				console.log('Relative: '+relX+' '+relY);
+
+				return [x,y];
+			}
+
+			function setupGameBoard() {
+				//var containerDiv = document.getElementById('board');
+
+				// Initializes the game board
+				gameBoard = new WGo.Board(document.getElementById('board'), {
+					width: 600,
+					size: 19,
+				});
+				//console.log('Initial width: '+gameBoard.width);
+
+				// Handles user clicks and places a piece down
+				//document.getElementById('board').addEventListener("click", function(ev) {
+					//var coords = getClickIndices(document.getElementById('board'), gameBoard, ev.clientX, ev.clientY);
+					//console.log(coords);
+
+				gameBoard.addEventListener("click", function(x, y) {
+					// if (pieceColor == "black") {
+					// 	gameBoard.addObject({
+					// 		x: x,
+					// 		y: y,
+					// 		c: WGo.B
+					// 	});
+					// } else if (pieceColor == "white") {
+					// 	gameBoard.addObject({
+					// 		x: x,
+					// 		y: y,
+					// 		c: WGo.W
+					// 	});
+					// }
+
+					socket.emit('place piece', {x: x, y: y, color: pieceColor});
+				});
+			}
+
+			socket.on('piece placed', function(data) {
+				var x = data.x;
+				var y = data.y;
+				var color = data.color == 'black' ? WGo.B : WGo.W;
+
+				gameBoard.addObject({
+					x: x,
+					y: y,
+					c: color
+				});
 			});
 		});
 	</script>
