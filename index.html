@@ -109,58 +109,14 @@
 				//$message.append(opponent + ' has left the game');
 			});
 
-			// Returns the indices of the position where the click was performed
-			// Adjusts offset relative to the board's position on the page
-			// and scales the coordinates to be (0, board.size) to conform to
-			// WGo.js using array indices rather than float coordinates
-			function getClickIndices(canvas, board, absX, absY) {
-				var rect = canvas.getBoundingClientRect();
-
-				var totalWidth = 600;
-				var boardWidth = .784 * totalWidth;
-				var boardBorder = .108 * totalWidth;
-
-				var relX = absX - boardBorder - rect.left;
-				var relY = absY - boardBorder - rect.top;
-
-				var x = Math.round((relX / boardWidth) * board.size);
-				var y = Math.round((relY / boardWidth) * board.size);
-
-				console.log('border: '+boardBorder);
-				console.log('Absolute: '+absX+' '+absY);
-				console.log('Relative: '+relX+' '+relY);
-
-				return [x,y];
-			}
-
-			// Returns how far offset the canvas is on the page.
-			// This corrects where the pente piece shows up based 
-			// on the user click because they get placed incorrectly when
-			// there are margins around the canvas element.
-			function getOffsetIndices() {
-				var canvas = document.getElementById('board');
-				var rect = canvas.getBoundingClientRect();
-
-
-			}
-
+			// Initializes the game board
 			function setupGameBoard() {
-				//var containerDiv = document.getElementById('board');
-
-				// Initializes the game board
 				gameBoard = new WGo.Board(document.getElementById('board'), {
 					width: 600,
 					size: 19,
 				});
-				//console.log('Initial width: '+gameBoard.width);
-
-				// Handles user clicks and places a piece down
-				//document.getElementById('board').addEventListener("click", function(ev) {
-					//var coords = getClickIndices(document.getElementById('board'), gameBoard, ev.clientX, ev.clientY);
-					//console.log(coords);
 
 				gameBoard.addEventListener("click", function(x, y) {
-
 					socket.emit('place piece', {x: x, y: y, color: pieceColor});
 				});
 			}
