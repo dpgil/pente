@@ -3,10 +3,13 @@ var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 
-var unpairedConnections = []; // socket objects of players not yet assigned to a game
-var socketIdToUsername = {}; // maps socket ids to player username
-var socketIdToGameId = {}; // maps player socket ids to game
-var lastGameId = 0; // most recent game id assigned
+var unpairedConnections = []; 	// socket objects of players not yet assigned to a game
+var socketIdToUsername = {}; 	// maps socket ids to player username
+var socketIdToGameId = {}; 		// maps player socket ids to game
+var gameIdToGameState = {}; 	// maps game id to the state of the game
+var lastGameId = 0; 			// most recent game id assigned
+
+var StateEnum = Object.freeze({EMPTY: 0, BLACK: 1, WHITE: -1});
 
 app.set('port', process.env.PORT || 5000);
 server.listen(app.get('port'), function() {
@@ -54,11 +57,18 @@ io.sockets.on('connection', function(socket) {
 		// get player game id
 		var gameId = socketIdToGameId[socket.id];
 
-		// TODO update the game state
+		// update the game state
+		setState(gameId, data.x, data.y, data.color);
 
 		// transmit change to players
 		io.to(gameId).emit('piece placed', data);
 	});
+
+	// Sets the (x, y) position to color in the game state
+	// corresponding to gameId
+	function setState(gameId, x, y, color) {
+		gameIdToGameState[gameId][x][y] = color;
+	}
 
 	// Array contains helper function
 	function contains(array, item) {
@@ -79,17 +89,36 @@ io.sockets.on('connection', function(socket) {
 		// Assigns a game id
 		var gameId = getGameId();
 
-		// Adds them to our player map
+		// Adds the players to our player map
 		socketIdToGameId[socket.id] = gameId;
 		socketIdToGameId[opponent.id] = gameId;
 
-		// Join the game room
+		// Initializes the game state (local copy of board)
+		var gameState = createGameState();
+		gameIdToGameState[gameId] = gameState;
+
+		// Adds players to the game room
 		socket.join(gameId);
 		opponent.join(gameId);
 
 		// Tells each player we found a match and their opponent's username
 		socket.emit('found match', {msg: socketIdToUsername[opponent.id], start: true});
 		opponent.emit('found match', {msg: socketIdToUsername[socket.id], start: false});
+	}
+
+	// Creates a 2D array storing piece positions
+	function createGameState() {
+		var size = 19;
+		var arr = new Array(size);
+
+		for (i = 0; i < size; i++) {
+			arr[i] = new Array(size);
+			for (j = 0; j < size; j++) {
+				arr[i][j] = StateEnum.EMPTY;
+			}
+		}
+
+		return arr;
 	}
 
 	// Tries to find a game match for the user that just connected
