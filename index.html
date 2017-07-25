@@ -44,9 +44,6 @@
 		</div>
 
 		<div id="gameArea" class="row">
-<!-- 			<div id="message">
-			</div> -->
-
 			<div id="board">
 			</div>
 
@@ -59,19 +56,19 @@
 		$(function() {
 			var socket = io.connect();
 
+			var $lobbyArea = $('#lobbyArea');
 			var $loginArea = $('#loginArea');
 			var $loginForm = $('#loginForm');
-			var $lobbyArea = $('#lobbyArea');
 			var $gameArea = $('#gameArea');
-			//var $message = $('#message');
 			var $username = $('#username');
-			var $users = $('#users');
-			//var $board = $('#board');
 			var $opponent = $('#opponent');
 
-			var opponent = '';
-			var pieceColor = '';
-			var gameBoard;
+			var opponent;	// stores the username of the opponent
+			var pieceColor; // stores if current user is white or black
+			var gameBoard; 	// rendered canvas that the user sees
+			var position; 	// stores game state of each cell
+
+			var currentTurn;
 
 			$loginForm.submit(function(e) {
 				e.preventDefault();
@@ -94,10 +91,9 @@
 				$gameArea.css('display', 'block');
 
 				opponent = data.msg;
-				$opponent.append('<p>Playing against: '+opponent+'</p>');
-				//$message.append('Paired with user '+opponent+'\n');
 
-				pieceColor = data.start ? "white" : "black";
+				pieceColor = data.start ? WGo.W : WGo.B;
+				currentTurn = data.start ? true : false;
 
 				setupGameBoard();
 			});
@@ -105,35 +101,71 @@
 			// Called when the opponent leaves the game
 			// TODO notify the player
 			socket.on('opponent left', function(data) {
-				//$message.empty();
-				//$message.append(opponent + ' has left the game');
+				$opponent.empty();
+				$opponent.append('<div class="well well-sm">'+opponent+' has left the game!</div>')
 			});
-
-			// Initializes the game board
-			function setupGameBoard() {
-				gameBoard = new WGo.Board(document.getElementById('board'), {
-					width: 600,
-					size: 19,
-				});
-
-				gameBoard.addEventListener("click", function(x, y) {
-					socket.emit('place piece', {x: x, y: y, color: pieceColor});
-				});
-			}
 
 			// Called when a piece has been placed down (by this user or the opponent)
 			// and the server has validated this move
 			socket.on('piece placed', function(data) {
-				var x = data.x;
-				var y = data.y;
-				var color = data.color == 'black' ? WGo.B : WGo.W;
-
+				// Updates the rendered canvas with a piece
 				gameBoard.addObject({
-					x: x,
-					y: y,
-					c: color
+					x: data.x,
+					y: data.y,
+					c: data.color
 				});
+
+				// Updates the game state
+				position.set(data.x, data.y, data.color);
+
+				// Switches player turn
+				currentTurn = !currentTurn;
+
+				$opponent.empty();
+				if (currentTurn) {
+					$opponent.append('<div class="well well-sm">Your turn!</div>');
+				} else {
+					$opponent.append('<div class="well well-sm">Waiting for '+opponent+' to play...</div>');
+				}
 			});
+
+			// Initializes the game board
+			function setupGameBoard() {
+				var width = 600;
+				var size = 19;
+
+				// Initializes board rendering element
+				gameBoard = new WGo.Board(document.getElementById('board'), {
+					width: width,
+					size: size,
+				});
+
+				// Initializes game state
+				position = new WGo.Position(size);
+
+				// Handles click methods
+				gameBoard.addEventListener("click", function(x, y) {
+					// Verifies that the click is valid
+					if (currentTurn && isEmpty(x,y)) {
+						socket.emit('place piece', {x: x, y: y, color: pieceColor});
+					} else {
+						$opponent.append('<div class="well well-sm">Can\'t place a piece!!</div>');
+					}
+				});
+
+			}
+
+			// Gets the contents in the (x,y) position on the board
+			// Returns either 0 (empty), WGo.W, or WGo.B
+			function getCell(x, y) {
+				return position.get(x,y);
+			}
+
+			// Returns  true if the cell at (x,y) position is empty
+			// false otherwise
+			function isEmpty(x, y) {
+				return getCell(x,y) == 0;
+			}
 		});
 	</script>
 </body>
