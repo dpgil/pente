@@ -36,7 +36,7 @@
 	<div class="container">
 		<!-- game board -->
 		<div id="boardArea" class="col-md-8">
-			<canvas id="board-placeholder"></canvas>
+			<img id="board-placeholder"></canvas>
 			<div id="board"></div>
 		</div>
 
@@ -87,15 +87,21 @@
 			var position; 	// stores game state of each cell
 			var currentTurn;// true if it is the current player's turn, false otherwise
 
-			setupGameBoardPlaceholder();
+			window.onload = function() {
+				setupGameBoardPlaceholder();
+			}
 
 			// Creates a canvas that lets the player know to wait
 			// until a match is found. Then it is replaced with the 
 			// actual rendered Pente board
 			function setupGameBoardPlaceholder() {
-				console.log($('#board-placeholder').parent().width());
-				$('#board-placeholder').width($('#board-placeholder').parent().width());
-				$('#board-placeholder').height($('#board-placeholder').parent().width());
+				var $placeholder = $('#board-placeholder');
+				var width = $placeholder.parent().width();
+
+				$placeholder.width(width);
+				$placeholder.height(width);
+
+				$placeholder.attr('src', 'img/toplay.png');
 			}
 
 			$loginForm.submit(function(e) {
