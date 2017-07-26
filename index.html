@@ -36,7 +36,7 @@
 	<div class="container">
 		<!-- game board -->
 		<div id="boardArea" class="col-md-8">
-			<img id="board-placeholder"></canvas>
+			<img id="board-placeholder" />
 			<div id="board"></div>
 		</div>
 
@@ -56,7 +56,14 @@
 			</div>
 
 			<div id="lobbyArea">
-				<div class="well well-sm">Waiting for opponent...</div>
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<p class="text-center">Waiting for opponent to join</label>
+						<br />
+						<br />
+						<img id="loading" class="text-center" src="img/ajax-loader.gif" />
+					</div>
+				</div>
 			</div>
 
 			<div id="gameArea" class="panel panel-default">
