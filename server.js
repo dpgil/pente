@@ -4,9 +4,8 @@ var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 
 var unpairedConnections = []; 	// socket objects of players not yet assigned to a game
-var socketIdToUsername = {}; 	// maps socket ids to player username
-var socketIdToGameId = {}; 		// maps player socket ids to game
 var gameIdToGameState = {}; 	// maps game id to the state of the game
+var socketIdToData = {};		// maps player socket ids to game data (current game id, opponent, username)
 var lastGameId = 0; 			// most recent game id assigned
 var size = 19;					// board size
 
@@ -28,7 +27,7 @@ io.sockets.on('connection', function(socket) {
 
 	// Called when the user submits a username and intends to join the lobby
 	socket.on('join lobby', function(username) {
-		socketIdToUsername[socket.id] = username;
+		socketIdToData[socket.id] = {username: username};
 
 		// Couldn't find a match, join the lobby and wait
 		if (!tryPairUser()) {
@@ -44,7 +43,7 @@ io.sockets.on('connection', function(socket) {
 			unpairedConnections.splice(unpairedConnections.indexOf(socket), 1);
 		} else {
 			// Player was in a game
-			var gameId = socketIdToGameId[socket.id];
+			var gameId = socketIdToData[socket.id].gameId;
 			io.to(gameId).emit('opponent left');
 		}
 
@@ -56,7 +55,7 @@ io.sockets.on('connection', function(socket) {
 	// 2. Notifies players of move 
 	socket.on('place piece', function(data) {
 		// get player game id
-		var gameId = socketIdToGameId[socket.id];
+		var gameId = socketIdToData[socket.id].gameId;
 
 		// update the game state
 		setState(gameId, data.x, data.y, data.color);
@@ -65,9 +64,13 @@ io.sockets.on('connection', function(socket) {
 		io.to(gameId).emit('piece placed', data);
 
 		// checks if the player won by placing this piece down
-		// TODO notify the opponent they lost and the player they won
 		if (playerWon(gameId, data.x, data.y, data.color)) {
-			io.to(gameId).emit('game over', {msg: 'Game is over!'});
+			// notify winner
+			socket.emit('game over', {won: true});
+
+			// notify loser
+			var opponent = socketIdToData[socket.id].opponent;
+			opponent.emit('game over', {won: false});
 		}
 	});
 
@@ -200,8 +203,11 @@ io.sockets.on('connection', function(socket) {
 		var gameId = getGameId();
 
 		// Adds the players to our player map
-		socketIdToGameId[socket.id] = gameId;
-		socketIdToGameId[opponent.id] = gameId;
+		socketIdToData[socket.id].gameId = gameId;
+		socketIdToData[opponent.id].gameId = gameId;
+
+		socketIdToData[socket.id].opponent = opponent;
+		socketIdToData[opponent.id].opponent = socket;
 
 		// Initializes the game state (local copy of board)
 		var gameState = createGameState();
@@ -212,8 +218,8 @@ io.sockets.on('connection', function(socket) {
 		opponent.join(gameId);
 
 		// Tells each player we found a match and their opponent's username
-		socket.emit('found match', {msg: socketIdToUsername[opponent.id], start: true});
-		opponent.emit('found match', {msg: socketIdToUsername[socket.id], start: false});
+		socket.emit('found match', {msg: socketIdToData[opponent.id].username, start: true});
+		opponent.emit('found match', {msg: socketIdToData[socket.id].username, start: false});
 	}
 
 	// Creates a 2D array storing piece positions

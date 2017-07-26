@@ -132,7 +132,12 @@
 			// Called when someone wins the game
 			socket.on('game over', function(data) {
 				$opponent.empty();
-				$opponent.append('<div class="well well-sm">Game over!</div');
+
+				if (data.won) {
+					$opponent.append('<div class="well well-sm">You win!!!</div>');
+				} else {
+					$opponent.append('<div class="well well-sm">You lose :(</div>');
+				}
 			})
 
 			// Initializes the game board
