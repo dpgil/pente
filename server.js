@@ -35,6 +35,12 @@ io.sockets.on('connection', function(socket) {
 		}
 	});
 
+	// Called when one of the players sends a message
+	socket.on('send message', function(data) {
+		var gameId = socketIdToData[socket.id].gameId;
+		io.to(gameId).emit('new message', data);
+	})
+
 	// Called when a player disconnects. Either removes them from
 	// available matches or notifies their opponent they forfeited
 	socket.on('disconnect', function(data) {

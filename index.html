@@ -21,9 +21,18 @@
 			display: none;
 		}
 
+		#chatArea {
+			display: none;
+		}
+
 		#boardArea {
 			background-color: #FCF3CF;
 			border: 3px solid black;
+		}
+
+		#chat {
+			overflow-y: scroll;
+			width: 100%;
 		}
 
 		.selected {
@@ -35,13 +44,13 @@
 <body>
 	<div class="container">
 		<!-- game board -->
-		<div id="boardArea" class="col-md-8">
+		<div id="boardArea" class="col-md-8 row-md-8">
 			<img id="board-placeholder" />
 			<div id="board"></div>
 		</div>
 
 		<!-- sidebar -->
-		<div class="col-md-3">
+		<div id="sidebar" class="col-md-3">
 			<div id="loginArea" class="panel panel-default">
 				<div class="panel-body">
 					<form id="loginForm">
@@ -55,6 +64,7 @@
 				</div>
 			</div>
 
+			<!-- lobby panel, has a loading gif -->
 			<div id="lobbyArea">
 				<div class="panel panel-default">
 					<div class="panel-body">
@@ -66,14 +76,39 @@
 				</div>
 			</div>
 
-			<div id="gameArea" class="panel panel-default">
-				<div class="panel-body">
-					<ul class="list-group">
-						<li id="player" class="list-group-item"></li>
-						<li id="opponent" class="list-group-item"></li>
-					</ul>
+			<!-- shows player names and chat window -->
+			<div id="gameArea">
+				<!-- displays player names -->
+				<div id="playerNames" class="panel panel-default">
+					<div class="panel-body">
+						<ul class="list-group">
+							<li id="player" class="list-group-item"></li>
+							<li id="opponent" class="list-group-item"></li>
+						</ul>
+					</div>
+				</div>
+
+				<!-- chat window -->
+				<div id="chatWindow" class="panel panel-default">
+					<div class="panel-body">
+						<textarea id="chat" type="text" rows="12"></textarea>
+
+						<form id="messageForm">
+							<div class="form-group">
+								<br />
+								<div class="input-group">
+									<input class="form-control" id="message" placeholder="Enter message" />
+									<span class="input-group-btn">
+										<button type="submit" class="btn btn-primary">Enter</button>
+									</span>
+								</div>
+							</div>
+						</form>
+					</div>
 				</div>
 			</div>
+
+			
 		</div>
 	</div>
 
@@ -81,6 +116,7 @@
 		$(function() {
 			var socket = io.connect();
 
+			var $messageForm = $('#messageForm');
 			var $lobbyArea = $('#lobbyArea');
 			var $loginArea = $('#loginArea');
 			var $loginForm = $('#loginForm');
@@ -125,6 +161,19 @@
 				$lobbyArea.css('display', 'block');
 			});
 
+			$messageForm.submit(function(e) {
+				e.preventDefault();
+
+				var fullMessage = username + ': ' + $('#message').val() + '\n';
+				socket.emit('send message', {msg: fullMessage});
+				$('#message').val('');
+			});
+
+			socket.on('new message', function(data) {
+				$('#chat').append(data.msg);
+				updateScroll();
+			});
+
 			// Got paired with another player in the lobby
 			socket.on('found match', function(data) {
 				opponent = data.msg;
@@ -136,6 +185,9 @@
 				// Switch to the game area page
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
+
+				// $('#sidebar').height($('#boardArea').height());
+				// $('#chatWindow').attr('height', '100%');
 
 				// Current player makes first move
 				if (data.start) {
@@ -237,6 +289,11 @@
 			// false otherwise
 			function isEmpty(x, y) {
 				return getCell(x,y) == 0;
+			}
+
+			// Scrolls the chat window down
+			function updateScroll() {
+				$('#chat').animate({ scrollTop: $('#chat').prop("scrollHeight")}, 1000);
 			}
 		});
 	</script>
