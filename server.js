@@ -41,8 +41,8 @@ io.sockets.on('connection', function(socket) {
 		if (contains(unpairedConnections, socket)) {
 			// Player was in the lobby, no longer available to pair
 			unpairedConnections.splice(unpairedConnections.indexOf(socket), 1);
-		} else {
-			// Player was in a game
+		} else if (socket.id in socketIdToData) {
+			// Player was in a game, notify their opponent
 			var gameId = socketIdToData[socket.id].gameId;
 			io.to(gameId).emit('opponent left');
 		}

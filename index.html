@@ -10,44 +10,62 @@
 	<style>
 		body {
 			margin-top:30px;
+			background-color: #ABB2B9;
 		}
 
 		#lobbyArea {
-			display:none;
+			display: none;
 		}
 
 		#gameArea {
-			display:none;
+			display: none;
+		}
+
+		#boardArea {
+			background-color: #FCF3CF;
+			border: 3px solid black;
+		}
+
+		.selected {
+			font-weight: bold;
 		}
 	</style>
 </head>
 
 <body>
 	<div class="container">
-		<div id="loginArea" class="row">
-			<div class="col-md-8">
-				<form id="loginForm">
-					<div class="form-group">
-						<label>Enter player name</label>
-						<input class="form-control" id="username" />
-						<br />
-						<input type="submit" class="btn btn-primary" value="Enter" />
-					</div>
-				</form>
-			</div>
+		<!-- game board -->
+		<div id="boardArea" class="col-md-8">
+			<canvas id="board-placeholder"></canvas>
+			<div id="board"></div>
 		</div>
 
-		<div id="lobbyArea" class="row">
-			<div id="users">
-				Waiting for opponent...
+		<!-- sidebar -->
+		<div class="col-md-3">
+			<div id="loginArea" class="panel panel-default">
+				<div class="panel-body">
+					<form id="loginForm">
+						<div class="input-group">
+							<input class="form-control" id="username" placeholder="Enter player name" />
+							<span class="input-group-btn">
+								<button type="submit" class="btn btn-primary">Enter</button>
+							</span>
+						</div>
+					</form>
+				</div>
 			</div>
-		</div>
 
-		<div id="gameArea" class="row">
-			<div id="board">
+			<div id="lobbyArea">
+				<div class="well well-sm">Waiting for opponent...</div>
 			</div>
 
-			<div id="opponent">
+			<div id="gameArea" class="panel panel-default">
+				<div class="panel-body">
+					<ul class="list-group">
+						<li id="player" class="list-group-item"></li>
+						<li id="opponent" class="list-group-item"></li>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -61,14 +79,24 @@
 			var $loginForm = $('#loginForm');
 			var $gameArea = $('#gameArea');
 			var $username = $('#username');
-			var $opponent = $('#opponent');
 
+			var username; 	// stores the current player's username
 			var opponent;	// stores the username of the opponent
 			var pieceColor; // stores if current user is white or black
 			var gameBoard; 	// rendered canvas that the user sees
 			var position; 	// stores game state of each cell
+			var currentTurn;// true if it is the current player's turn, false otherwise
 
-			var currentTurn;
+			setupGameBoardPlaceholder();
+
+			// Creates a canvas that lets the player know to wait
+			// until a match is found. Then it is replaced with the 
+			// actual rendered Pente board
+			function setupGameBoardPlaceholder() {
+				console.log($('#board-placeholder').parent().width());
+				$('#board-placeholder').width($('#board-placeholder').parent().width());
+				$('#board-placeholder').height($('#board-placeholder').parent().width());
+			}
 
 			$loginForm.submit(function(e) {
 				e.preventDefault();
@@ -86,23 +114,38 @@
 
 			// Got paired with another player in the lobby
 			socket.on('found match', function(data) {
+				opponent = data.msg;
+
+				// Add player usernames to sidebar
+				$('#player').append(username);
+				$('#opponent').append(opponent);
+
 				// Switch to the game area page
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
 
-				opponent = data.msg;
+				// Current player makes first move
+				if (data.start) {
+					pieceColor = WGo.W;
+					currentTurn = true;
+					$('#player').toggleClass('selected');
+					$('#player').toggleClass('list-group-item-success');
+					$('#opponent').toggleClass('list-group-item-danger');
+				} else {
+					pieceColor = WGo.B;
+					currentTurn = false;
+					$('#opponent').toggleClass('selected');
+					$('#opponent').toggleClass('list-group-item-success');
+					$('#player').toggleClass('list-group-item-danger');
+				}
 
-				pieceColor = data.start ? WGo.W : WGo.B;
-				currentTurn = data.start ? true : false;
-
-				setupGameBoard();
+				// Creates and renders the game board
+				renderGameBoard();
 			});
 
 			// Called when the opponent leaves the game
-			// TODO notify the player
 			socket.on('opponent left', function(data) {
-				$opponent.empty();
-				$opponent.append('<div class="well well-sm">'+opponent+' has left the game!</div>')
+				// TODO notify the player
 			});
 
 			// Called when a piece has been placed down (by this user or the opponent)
@@ -119,14 +162,7 @@
 				position.set(data.x, data.y, data.color);
 
 				// Switches player turn
-				currentTurn = !currentTurn;
-
-				$opponent.empty();
-				if (currentTurn) {
-					$opponent.append('<div class="well well-sm">Your turn!</div>');
-				} else {
-					$opponent.append('<div class="well well-sm">Waiting for '+opponent+' to play...</div>');
-				}
+				switchPlayerTurn();
 			});
 
 			// Called when someone wins the game
@@ -138,11 +174,23 @@
 				} else {
 					$opponent.append('<div class="well well-sm">You lose :(</div>');
 				}
-			})
+			});
+
+			function switchPlayerTurn() {
+				currentTurn = !currentTurn;
+
+				// Switches between selected player and green/red background
+				$('#player').toggleClass('list-group-item-danger').toggleClass('list-group-item-success').toggleClass('selected');
+				$('#opponent').toggleClass('list-group-item-danger').toggleClass('list-group-item-success').toggleClass('selected');
+			}
 
 			// Initializes the game board
-			function setupGameBoard() {
-				var width = 600;
+			function renderGameBoard() {
+				// Removes the placeholder
+				$('#board-placeholder').css('display', 'none');
+
+				// Fills the parent bootstrap column
+				var width = $('#board').parent().width();
 				var size = 19;
 
 				// Initializes board rendering element
