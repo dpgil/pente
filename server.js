@@ -8,6 +8,7 @@ var socketIdToUsername = {}; 	// maps socket ids to player username
 var socketIdToGameId = {}; 		// maps player socket ids to game
 var gameIdToGameState = {}; 	// maps game id to the state of the game
 var lastGameId = 0; 			// most recent game id assigned
+var size = 19;					// board size
 
 var StateEnum = Object.freeze({EMPTY: 0, BLACK: 1, WHITE: -1});
 
@@ -60,9 +61,118 @@ io.sockets.on('connection', function(socket) {
 		// update the game state
 		setState(gameId, data.x, data.y, data.color);
 
-		// transmit change to players
+		// notify the players ot the state change
 		io.to(gameId).emit('piece placed', data);
+
+		// checks if the player won by placing this piece down
+		// TODO notify the opponent they lost and the player they won
+		if (playerWon(gameId, data.x, data.y, data.color)) {
+			io.to(gameId).emit('game over', {msg: 'Game is over!'});
+		}
 	});
+
+	// Returns true if the player using color has won
+	// by placing a piece at the (x, y) position in the
+	// game corresponding to gameId, false otherwise
+	function playerWon(gameId, x, y, color) {
+		var gameState = gameIdToGameState[gameId];
+
+		// Only need to check the space with a radius of 4
+		for (let i = x-4; i <= x+4; i++) {
+			for (let j = y-4; j <= y+4; j++) {			
+				if (winningTrail(gameState, i, j, color)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	// Returns true if the current piece is the leftmost
+	// piece in a trail of 5 of the same color
+	// Only need to check down, right, diag up right, diag down right
+	// If there is a trail of 5 and the current piece is not the left-most one,
+	// we will eventually find the left most piece
+	function winningTrail(board, x, y, color) {
+		// Check for bounds
+		if (x < 0 || y < 0 || x >= size || y >= size) {
+			return false;
+		}
+
+		return checkDownTrail(board, x, y, color)
+			|| checkRightTrail(board, x, y, color)
+			|| checkUpRightTrail(board, x, y, color)
+			|| checkDownRightTrail(board, x, y, color);
+	}
+
+	// Returns true if (x,y) is the start of a trail
+	// of 5 same colored pieces downwards
+	function checkDownTrail(board, x, y, color) {
+		// bounds check
+		if (y+4 >= size) {
+			return false;
+		}
+
+		for (let i = 0; i <= 4; i++) {
+			if (board[x][y+i] != color) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Returns true if (x,y) is the start of a trail of
+	// 5 same colored pieces to the right
+	function checkRightTrail(board, x, y, color) {
+		// bounds check
+		if (x+4 >= size) {
+			return false;
+		}
+
+		for (let i = 0; i <= 4; i++) {
+			if (board[x+i][y] != color) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Returns true if (x,y) is the start of a trail of 
+	// 5 same colored pieces diag up right
+	function checkUpRightTrail(board, x, y, color) {
+		// bounds check
+		if (x+4 >= size || y-4 < 0) {
+			return false;
+		}
+
+		for (let i = 0; i <= 4; i++) {
+			if (board[x+i][y-i] != color) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Returns true if (x,y) is the start of a trail of
+	// 5 same colored pieces diag down right
+	function checkDownRightTrail(board, x, y, color) {
+		// bounds check
+		if (x+4 >= size || y+4 >= size) {
+			return false;
+		}
+
+		for (let i = 0; i <= 4; i++) {
+			if (board[x+i][y+i] != color) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 
 	// Sets the (x, y) position to color in the game state
 	// corresponding to gameId
@@ -108,7 +218,6 @@ io.sockets.on('connection', function(socket) {
 
 	// Creates a 2D array storing piece positions
 	function createGameState() {
-		var size = 19;
 		var arr = new Array(size);
 
 		for (i = 0; i < size; i++) {

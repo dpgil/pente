@@ -129,6 +129,12 @@
 				}
 			});
 
+			// Called when someone wins the game
+			socket.on('game over', function(data) {
+				$opponent.empty();
+				$opponent.append('<div class="well well-sm">Game over!</div');
+			})
+
 			// Initializes the game board
 			function setupGameBoard() {
 				var width = 600;
