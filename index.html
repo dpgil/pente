@@ -140,6 +140,7 @@
 			var gameBoard; 	// rendered canvas that the user sees
 			var position; 	// stores game state of each cell
 			var currentTurn;// true if it is the current player's turn, false otherwise
+			var gameOver;	// true if the game is over
 
 			window.onload = function() {
 				setupGameBoardPlaceholder();
@@ -217,6 +218,9 @@
 
 				// Creates and renders the game board
 				renderGameBoard();
+
+				// Starts the game
+				gameOver = false;
 			});
 
 			// Called when the opponent leaves the game
@@ -250,6 +254,8 @@
 				} else {
 					$('#gameMessage').append('<div class="well well-sm">You lose :(</div>');
 				}
+
+				gameOver = true;
 			});
 
 			// Called when pieces have been trapped
@@ -296,7 +302,7 @@
 				// Handles click methods
 				gameBoard.addEventListener("click", function(x, y) {
 					// Verifies that the click is valid
-					if (currentTurn && isEmpty(x,y)) {
+					if (!gameOver && currentTurn && isEmpty(x,y)) {
 						socket.emit('place piece', {x: x, y: y, color: pieceColor});
 					}
 				});
