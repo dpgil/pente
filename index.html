@@ -30,6 +30,10 @@
 			border: 3px solid black;
 		}
 
+		#gameMessagePanel {
+			display: none;
+		}
+
 		#chat {
 			overflow-y: scroll;
 			width: 100%;
@@ -105,6 +109,13 @@
 							</div>
 						</form>
 					</div>
+				</div>
+
+				<!-- game messages -->
+				<div id="gameMessagePanel" class="panel panel-default">
+					<div class="panel-body">
+						<div id="gameMessage"></div>
+					</div>	
 				</div>
 			</div>
 
@@ -232,12 +243,12 @@
 
 			// Called when someone wins the game
 			socket.on('game over', function(data) {
-				$opponent.empty();
+				$('#gameMessagePanel').css('display', 'block');
 
 				if (data.won) {
-					$opponent.append('<div class="well well-sm">You win!!!</div>');
+					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
 				} else {
-					$opponent.append('<div class="well well-sm">You lose :(</div>');
+					$('#gameMessage').append('<div class="well well-sm">You lose :(</div>');
 				}
 			});
 
@@ -287,8 +298,6 @@
 					// Verifies that the click is valid
 					if (currentTurn && isEmpty(x,y)) {
 						socket.emit('place piece', {x: x, y: y, color: pieceColor});
-					} else {
-						$opponent.append('<div class="well well-sm">Can\'t place a piece!!</div>');
 					}
 				});
 

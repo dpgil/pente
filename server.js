@@ -71,14 +71,7 @@ io.sockets.on('connection', function(socket) {
 
 		// checks if the player won by placing this piece down
 		if (playerWon(gameId, data.x, data.y, data.color)) {
-			// notify winner
-			socket.emit('game over', {won: true});
-
-			// notify loser
-			var opponent = socketIdToData[socket.id].opponent;
-			opponent.emit('game over', {won: false});
-
-			// TODO remove players from the game room
+			gameOver();
 		}
 		// if there are pieces to remove
 		else {
@@ -89,15 +82,45 @@ io.sockets.on('connection', function(socket) {
 				io.to(gameId).emit('trapped pieces', {x1: trapped.x1, y1: trapped.y1, x2: trapped.x2, y2: trapped.y2, color: trapped.color});
 
 				// remove them locally
-				// gameState[trapped.x1][trapped.y1] = StateEnum.EMPTY;
-				// gameState[trapped.x2][trapped.y2] = StateEnum.EMPTY;
 				setState(gameId, trapped.x1, trapped.y1, StateEnum.EMPTY);
 				setState(gameId, trapped.x2, trapped.y2, StateEnum.EMPTY);
 
+				// increment trapped count
+				var count = incrementTrappedCount(gameId, data.color);
+
 				// TODO check if the game is over
+				if (count == 5) {
+					gameOver();
+				}
 			}
 		}
 	});
+
+	// Notifies the players that the game is over
+	// and the current socket won
+	function gameOver() {
+		socket.emit('game over', {won: true});
+
+		// notify loser
+		var opponent = socketIdToData[socket.id].opponent;
+		opponent.emit('game over', {won: false});
+
+		// TODO remove players from the game room
+	}
+
+	// Increments the count of the number of pairs color
+	// has trapped, and returns the new count
+	function incrementTrappedCount(gameId, color) {
+		var gameState = gameIdToGameState[gameId];
+		
+		if (color == StateEnum.BLACK) {
+			gameState.bTrapped = gameState.bTrapped + 1;
+			return gameState.bTrapped;
+		} else {
+			gameState.wTrapped = gameState.wTrapped + 1;
+			return gameState.wTrapped;
+		}
+	}
 
 	// Checks if there are pieces that were just trapped as the result
 	// of the placement of the piece at (x,y)
@@ -389,6 +412,9 @@ io.sockets.on('connection', function(socket) {
 				arr[i][j] = StateEnum.EMPTY;
 			}
 		}
+
+		arr.bTrapped = 0;
+		arr.wTrapped = 0;
 
 		return arr;
 	}
