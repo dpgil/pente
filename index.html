@@ -53,6 +53,7 @@
 	<div class="container">
 		<!-- game board -->
 		<div id="boardArea" class="col-md-8">
+			<img id="boardPlaceholder"></img>
 			<div id="board"></div>
 		</div>
 
@@ -146,7 +147,17 @@
 			var gameOver;	// true if the game is over
 
 			window.onload = function() {
-				renderGameBoard();
+				setupBoardPlaceholder();
+			}
+
+			function setupBoardPlaceholder() {
+				var $placeholder = $('#boardPlaceholder');
+				var width = $placeholder.parent().width();
+
+				$placeholder.width(width);
+				$placeholder.height(width);
+
+				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg')
 			}
 
 			$loginForm.submit(function(e) {
@@ -188,9 +199,6 @@
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
 
-				// $('#sidebar').height($('#boardArea').height());
-				// $('#chatWindow').attr('height', '100%');
-
 				// Current player makes first move
 				if (data.start) {
 					pieceColor = WGo.W;
@@ -205,6 +213,9 @@
 					$('#opponent').toggleClass('list-group-item-success');
 					$('#player').toggleClass('list-group-item-danger');
 				}
+
+				// Render game board
+				renderGameBoard();
 
 				// Starts the game
 				gameOver = false;
@@ -270,6 +281,9 @@
 
 			// Initializes the game board
 			function renderGameBoard() {
+				// Removes the board placeholder
+				$('#boardPlaceholder').css('display', 'none');
+
 				// Fills the parent bootstrap column
 				var width = $('#board').parent().width();
 				var size = 19;
