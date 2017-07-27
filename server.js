@@ -78,9 +78,6 @@ io.sockets.on('connection', function(socket) {
 			var trapped = checkTrappedPieces(gameId, data.x, data.y, data.color);
 
 			if (trapped) {
-				// notify players to remove pieces
-				io.to(gameId).emit('trapped pieces', {x1: trapped.x1, y1: trapped.y1, x2: trapped.x2, y2: trapped.y2, color: trapped.color});
-
 				// remove them locally
 				setState(gameId, trapped.x1, trapped.y1, StateEnum.EMPTY);
 				setState(gameId, trapped.x2, trapped.y2, StateEnum.EMPTY);
@@ -88,7 +85,19 @@ io.sockets.on('connection', function(socket) {
 				// increment trapped count
 				var count = incrementTrappedCount(gameId, data.color);
 
-				// TODO check if the game is over
+				// notify players to remove pieces
+				io.to(gameId).emit('trapped pieces', 
+					{
+						x1: trapped.x1, 
+						y1: trapped.y1, 
+						x2: trapped.x2, 
+						y2: trapped.y2, 
+						color: trapped.color, 
+						count: count
+					}
+				);
+
+				// game is over if 5 pairs are trapped
 				if (count == 5) {
 					gameOver();
 				}
@@ -112,7 +121,7 @@ io.sockets.on('connection', function(socket) {
 	// has trapped, and returns the new count
 	function incrementTrappedCount(gameId, color) {
 		var gameState = gameIdToGameState[gameId];
-		
+
 		if (color == StateEnum.BLACK) {
 			gameState.bTrapped = gameState.bTrapped + 1;
 			return gameState.bTrapped;

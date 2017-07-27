@@ -26,12 +26,14 @@
 		}
 
 		#boardArea {
-			background-color: #FCF3CF;
-			border: 2px solid black;
 			/*not sure why there is padding 
 			automatically added but this fixes it*/
 			padding-right: 0;
 			padding-left: 0;
+		}
+
+		#board {
+			display:none;
 		}
 
 		#gameMessagePanel {
@@ -43,8 +45,54 @@
 			width: 100%;
 		}
 
+		#white-trapped {
+			float:left;
+		}
+
+		#black-trapped {
+			float:right;
+		}
+
+		#trapped-pieces {
+			width:100%;
+			margin-top:15px;
+			border-radius:50px;
+			border:2px solid black;
+			background-color:grey;
+			display:none;
+		}
+
+		#boardPlaceholder {
+			border: 2px solid black;
+		}
+
 		.selected {
 			font-weight: bold;
+		}
+
+		.wgo-board {
+			border: 2px solid black;
+		}
+
+		.clearfix:after {
+		    content: ".";
+		    display: block;
+		    clear: both;
+		    visibility: hidden;
+		    line-height: 0;
+		    height: 0;
+		}
+
+		.clearfix {
+		    display: inline-block;
+		}
+
+		html[xmlns] .clearfix {
+		    display: block;
+		}
+
+		* html .clearfix {
+		    height: 1%;
 		}
 	</style>
 </head>
@@ -55,6 +103,24 @@
 		<div id="boardArea" class="col-md-8">
 			<img id="boardPlaceholder"></img>
 			<div id="board"></div>
+			<br />
+			<div id="trapped-pieces" class="clearfix well well-sm">
+				<div id="white-trapped" class="panel-body" align="left">
+					<img id="piecew1" src="img/white_piece_untrapped.png" class="trapped-piece" />
+					<img id="piecew2" src="img/white_piece_untrapped.png" class="trapped-piece" />
+					<img id="piecew3" src="img/white_piece_untrapped.png" class="trapped-piece" />
+					<img id="piecew4" src="img/white_piece_untrapped.png" class="trapped-piece" />
+					<img id="piecew5" src="img/white_piece_untrapped.png" class="trapped-piece" />
+				</div>
+
+				<div id="black-trapped" class="panel-body" align="right">
+					<img id="pieceb5" src="img/black_piece_untrapped.png" class="trapped-piece" />
+					<img id="pieceb4" src="img/black_piece_untrapped.png" class="trapped-piece" />
+					<img id="pieceb3" src="img/black_piece_untrapped.png" class="trapped-piece" />
+					<img id="pieceb2" src="img/black_piece_untrapped.png" class="trapped-piece" />
+					<img id="pieceb1" src="img/black_piece_untrapped.png" class="trapped-piece" />
+				</div>
+			</div>
 		</div>
 
 		<!-- sidebar -->
@@ -76,10 +142,9 @@
 			<div id="lobbyArea">
 				<div class="panel panel-default">
 					<div class="panel-body">
-						<p class="text-center">Waiting for opponent to join</label>
+						<p class="text-center">Waiting for opponent to join</p>
 						<br />
-						<br />
-						<img id="loading" class="text-center" src="img/ajax-loader.gif" />
+						<center><img id="loading" src="img/ajax-loader.gif" /></center>
 					</div>
 				</div>
 			</div>
@@ -98,6 +163,10 @@
 
 				<!-- chat window -->
 				<div id="chatWindow" class="panel panel-default">
+					<div class="panel-heading">
+						<label>Chat</label>
+					</div>
+
 					<div class="panel-body">
 						<textarea id="chat" type="text" rows="12"></textarea>
 
@@ -121,9 +190,7 @@
 						<div id="gameMessage"></div>
 					</div>	
 				</div>
-			</div>
-
-			
+			</div>			
 		</div>
 	</div>
 
@@ -148,8 +215,11 @@
 
 			window.onload = function() {
 				setupBoardPlaceholder();
+				setupTrappedPieces();
 			}
 
+			// Adds a placeholder image for the board so the
+			// pente lines don't appear until the game starts
 			function setupBoardPlaceholder() {
 				var $placeholder = $('#boardPlaceholder');
 				var width = $placeholder.parent().width();
@@ -158,6 +228,11 @@
 				$placeholder.height(width);
 
 				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg')
+			}
+
+			// Sizes the trapped pieces at the bottom of the game area
+			function setupTrappedPieces() {
+				$('.trapped-piece').height(0.05 * $('#boardPlaceholder').height());
 			}
 
 			$loginForm.submit(function(e) {
@@ -268,7 +343,12 @@
 				position.set(data.x1, data.y1, 0);
 				position.set(data.x2, data.y2, 0);
 
-				// TODO update the removal count
+				// shows the new trapped piece at the bottom
+				var imageString = data.color == WGo.B ? 'img/black_piece_trapped.png' : 'img/white_piece_trapped.png';
+				var colorString = data.color == WGo.B ? 'b' : 'w';
+				var countString = data.count;
+				var fullId = '#piece' + colorString + countString;
+				$(fullId).attr('src', imageString);
 			});
 
 			function switchPlayerTurn() {
@@ -283,6 +363,8 @@
 			function renderGameBoard() {
 				// Removes the board placeholder
 				$('#boardPlaceholder').css('display', 'none');
+				$('#board').css('display', 'block');
+				$('#trapped-pieces').css('display', 'block');
 
 				// Fills the parent bootstrap column
 				var width = $('#board').parent().width();
