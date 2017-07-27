@@ -25,7 +25,8 @@
 
 var scripts= document.getElementsByTagName('script');
 var path= scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
-var mydir= path.split('/').slice(0, -1).join('/')+'/';
+//var mydir= path.split('/').slice(0, -1).join('/')+'/';
+var mydir= 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/';
 
 /**
  * Main namespace - it initializes WGo in first run and then execute main function.
