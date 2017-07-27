@@ -241,6 +241,21 @@
 				}
 			});
 
+			// Called when pieces have been trapped
+			socket.on('trapped pieces', function(data) {
+				console.log('Trapped piece!!');
+
+				// Remove the rendered pieces
+				gameBoard.removeObjectsAt(data.x1, data.y1);
+				gameBoard.removeObjectsAt(data.x2, data.y2);
+
+				// Remove the pieces from the local copy
+				position.set(data.x1, data.y1, 0);
+				position.set(data.x2, data.y2, 0);
+
+				// TODO update the removal count
+			});
+
 			function switchPlayerTurn() {
 				currentTurn = !currentTurn;
 

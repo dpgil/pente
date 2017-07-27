@@ -77,8 +77,159 @@ io.sockets.on('connection', function(socket) {
 			// notify loser
 			var opponent = socketIdToData[socket.id].opponent;
 			opponent.emit('game over', {won: false});
+
+			// TODO remove players from the game room
+		}
+		// if there are pieces to remove
+		else {
+			var trapped = checkTrappedPieces(gameId, data.x, data.y, data.color);
+
+			if (trapped) {
+				// notify players to remove pieces
+				io.to(gameId).emit('trapped pieces', {x1: trapped.x1, y1: trapped.y1, x2: trapped.x2, y2: trapped.y2, color: trapped.color});
+
+				// remove them locally
+				// gameState[trapped.x1][trapped.y1] = StateEnum.EMPTY;
+				// gameState[trapped.x2][trapped.y2] = StateEnum.EMPTY;
+				setState(gameId, trapped.x1, trapped.y1, StateEnum.EMPTY);
+				setState(gameId, trapped.x2, trapped.y2, StateEnum.EMPTY);
+
+				// TODO check if the game is over
+			}
 		}
 	});
+
+	// Checks if there are pieces that were just trapped as the result
+	// of the placement of the piece at (x,y)
+	function checkTrappedPieces(gameId, x, y, color) {
+		var gameState = gameIdToGameState[gameId];
+
+		var opponentColor = -1 * color;
+
+		// north
+		if (y-3 >= 0) {
+			if (gameState[x][y-1] == opponentColor
+				&& gameState[x][y-2] == opponentColor
+				&& gameState[x][y-3] == color) {
+				return {
+					x1: x,
+					y1: y-1,
+					x2: x,
+					y2: y-2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// north east
+		if (y-3 >= 0 && x+3 < size) {
+			if (gameState[x+1][y-1] == opponentColor
+				&& gameState[x+2][y-2] == opponentColor
+				&& gameState[x+3][y-3] == color) {
+				return {
+					x1: x+1,
+					y1: y-1,
+					x2: x+2,
+					y2: y-2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// east
+		if (x+3 < size) {
+			if (gameState[x+1][y] == opponentColor
+				&& gameState[x+2][y] == opponentColor
+				&& gameState[x+3][y] == color) {
+				return {
+					x1: x+1,
+					y1: y,
+					x2: x+2,
+					y2: y,
+					color: opponentColor
+				};
+			}
+		}
+
+		// south east
+		if (y+3 < size && x+3 < size) {
+			if (gameState[x+1][y+1] == opponentColor
+				&& gameState[x+2][y+2] == opponentColor
+				&& gameState[x+3][y+3] == color) {
+				return {
+					x1: x+1,
+					y1: y+1,
+					x2: x+2,
+					y2: y+2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// south
+		if (y+3 < size) {
+			if (gameState[x][y+1] == opponentColor
+				&& gameState[x][y+2] == opponentColor
+				&& gameState[x][y+3] == color) {
+				return {
+					x1: x,
+					y1: y+1,
+					x2: x,
+					y2: y+2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// south west
+		if (y+3 < size && x-3 >= 0) {
+			if (gameState[x-1][y+1] == opponentColor
+				&& gameState[x-2][y+2] == opponentColor
+				&& gameState[x-3][y+3] == color) {
+				return {
+					x1: x-1,
+					y1: y+1,
+					x2: x-2,
+					y2: y+2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// west
+		if (x-3 >= 0) {
+			if (gameState[x-1][y] == opponentColor
+				&& gameState[x-2][y] == opponentColor
+				&& gameState[x-3][y] == color) {
+				return {
+					x1: x-1,
+					y1: y,
+					x2: x-2,
+					y2: y,
+					color: opponentColor
+				};
+			}
+		}
+
+		// north west
+		if (y-3 >= 0 && x-3 >= 0) {
+			if (gameState[x-1][y-1] == opponentColor
+				&& gameState[x-2][y-2] == opponentColor
+				&& gameState[x-3][y-3] == color) {
+				return {
+					x1: x-1,
+					y1: y-1,
+					x2: x-2,
+					y2: y-2,
+					color: opponentColor
+				};
+			}
+		}
+
+		// no trapped pieces
+		return undefined;
+	}
+
 
 	// Returns true if the player using color has won
 	// by placing a piece at the (x, y) position in the
