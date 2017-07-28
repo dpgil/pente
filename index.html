@@ -75,7 +75,9 @@
 		}
 
 		.chat-bubble {
-			margin-bottom: 5px;
+			margin-top: 3px;
+			margin-bottom: 3px;
+			border-radius: 10px;
 		}
 
 		.clearfix:after {
@@ -257,9 +259,7 @@
 			$messageForm.submit(function(e) {
 				e.preventDefault();
 
-				var fullMessage = '<div class="well well-sm chat-bubble">' + username + ': ' + $('#message').val() + '</div>';
-				socket.emit('send message', {msg: fullMessage});
-				$('#message').val('');
+				sendMessage();
 			});
 
 			socket.on('new message', function(data) {
@@ -356,6 +356,16 @@
 				var fullId = '#piece' + colorString + countString;
 				$(fullId).attr('src', imageString);
 			});
+
+			function sendMessage(message) {
+				var message = '<div class="well well-sm chat-bubble"><b>' + username + ':</b> ' + $('#message').val() + '</div>';
+
+				// Formats and sends the message
+				socket.emit('send message', {msg: message});
+
+				// Clears the message input
+				$('#message').val('');
+			}
 
 			function switchPlayerTurn() {
 				currentTurn = !currentTurn;
