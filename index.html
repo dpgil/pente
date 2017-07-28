@@ -74,10 +74,17 @@
 			border: 2px solid black;
 		}
 
-		.chat-bubble {
+		.chat-bubble-sent {
 			margin-top: 3px;
 			margin-bottom: 3px;
 			border-radius: 10px;
+		}
+
+		.chat-bubble-received {
+			margin-top: 3px;
+			margin-bottom: 3px;
+			border-radius: 10px;
+			background-color: #A9CCE3;
 		}
 
 		.clearfix:after {
@@ -259,12 +266,17 @@
 			$messageForm.submit(function(e) {
 				e.preventDefault();
 
-				sendMessage();
+				// Grabs the message
+				var message = $('#message').val();
+				sendMessage(message);
+
+				// Clears the message input
+				$('#message').val('');
 			});
 
+			// Called when a message is received from the opponent
 			socket.on('new message', function(data) {
-				$('#chat').append(data.msg);
-				updateScroll();
+				addMessageToChatWindow(data, false);
 			});
 
 			// Got paired with another player in the lobby
@@ -357,14 +369,31 @@
 				$(fullId).attr('src', imageString);
 			});
 
+			// Formats the message depending on if it was sent or received
+			// and adds it to the chat window
+			function addMessageToChatWindow(message, sent) {
+				// Grabs the username and how to style the bubble
+				// depending on who sent it
+				var user = sent ? username : opponent;
+				var styleClass = sent ? 'chat-bubble-sent' : 'chat-bubble-received';
+
+				// Bolds the username but not the message
+				var formattedMessage = '<b>' + user + ':</b> ' + message;
+
+				// Adds the message into a well div
+				var chatBubble = '<div class="well well-sm ' + styleClass + '">' + formattedMessage + '</div>';
+
+				// Adds the well into the chat div and scrolls down
+				$('#chat').append(chatBubble);
+				updateScroll();
+			}
+
 			function sendMessage(message) {
-				var message = '<div class="well well-sm chat-bubble"><b>' + username + ':</b> ' + $('#message').val() + '</div>';
+				// Formats the message and adds it to the chat window
+				addMessageToChatWindow(message, true);
 
-				// Formats and sends the message
-				socket.emit('send message', {msg: message});
-
-				// Clears the message input
-				$('#message').val('');
+				// Sends the message to the opponent
+				socket.emit('send message', message);
 			}
 
 			function switchPlayerTurn() {
