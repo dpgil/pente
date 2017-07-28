@@ -27,23 +27,46 @@ io.sockets.on('connection', function(socket) {
 
 	// Called when the user submits a username and intends to join the lobby
 	socket.on('join lobby', function(username) {
+		joinLobby(username);
+	});
+
+	// Called when one of the players sends a message
+	socket.on('send message', function(data) {
+		sendMessageToOpponent(data);
+	});
+
+	// Called when a player disconnects. Either removes them from
+	// available matches or notifies their opponent they forfeited
+	socket.on('disconnect', function(data) {
+		disconnectUser();
+	});
+
+	// Receives a game move from a player
+	// 1. Updates the game state
+	// 2. Notifies players of move 
+	socket.on('place piece', function(data) {
+		placePiece(data.x, data.y, data.color);
+	});
+
+	// Allows the current socket to join the lobby with
+	// the specified username. Tries to pair it with an opponent
+	function joinLobby(username) {
 		socketIdToData[socket.id] = {username: username};
 
 		// Couldn't find a match, join the lobby and wait
 		if (!tryPairUser()) {
 			unpairedConnections.push(socket);
 		}
-	});
+	}
 
-	// Called when one of the players sends a message
-	socket.on('send message', function(data) {
+	// Sends a message to the player's opponent
+	function sendMessageToOpponent(message) {
 		var opponent = socketIdToData[socket.id].opponent;
-		opponent.emit('new message', data);
-	})
+		opponent.emit('new message', message);
+	}
 
-	// Called when a player disconnects. Either removes them from
-	// available matches or notifies their opponent they forfeited
-	socket.on('disconnect', function(data) {
+	// Removes the player from the current game or the lobby
+	function disconnectUser() {
 		if (contains(unpairedConnections, socket)) {
 			// Player was in the lobby, no longer available to pair
 			unpairedConnections.splice(unpairedConnections.indexOf(socket), 1);
@@ -54,28 +77,26 @@ io.sockets.on('connection', function(socket) {
 		}
 
 		console.log('Socket disconnected');
-	});
+	}
 
-	// Receives a game move from a player
-	// 1. Updates the game state
-	// 2. Notifies players of move 
-	socket.on('place piece', function(data) {
+	// When a player places a piece on a board
+	function placePiece(x, y, color) {
 		// get player game id
 		var gameId = socketIdToData[socket.id].gameId;
 
 		// update the game state
-		setState(gameId, data.x, data.y, data.color);
+		setState(gameId, x, y, color);
 
 		// notify the players ot the state change
-		io.to(gameId).emit('piece placed', data);
+		io.to(gameId).emit('piece placed', {x: x, y: y, color: color});
 
 		// checks if the player won by placing this piece down
-		if (playerWon(gameId, data.x, data.y, data.color)) {
+		if (playerWon(gameId, x, y, color)) {
 			gameOver();
 		}
 		// if there are pieces to remove
 		else {
-			var trapped = checkTrappedPieces(gameId, data.x, data.y, data.color);
+			var trapped = checkTrappedPieces(gameId, x, y, color);
 
 			if (trapped) {
 				// remove them locally
@@ -83,7 +104,7 @@ io.sockets.on('connection', function(socket) {
 				setState(gameId, trapped.x2, trapped.y2, StateEnum.EMPTY);
 
 				// increment trapped count
-				var count = incrementTrappedCount(gameId, data.color);
+				var count = incrementTrappedCount(gameId, color);
 
 				// notify players to remove pieces
 				io.to(gameId).emit('trapped pieces', 
@@ -103,7 +124,7 @@ io.sockets.on('connection', function(socket) {
 				}
 			}
 		}
-	});
+	}
 
 	// Notifies the players that the game is over
 	// and the current socket won
