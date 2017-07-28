@@ -95,8 +95,9 @@ io.sockets.on('connection', function(socket) {
 		opponent.join(gameId);
 
 		// Tells each player we're starting a rematch and who starts
-		socket.emit('starting rematch', {start: true});
-		opponent.emit('starting rematch', {start: false});
+		var rand = Math.random() >= 0.5;
+		socket.emit('starting rematch', {start: rand});
+		opponent.emit('starting rematch', {start: !rand});
 	}
 
 	// Allows the current socket to join the lobby with
@@ -483,8 +484,9 @@ io.sockets.on('connection', function(socket) {
 		opponent.join(gameId);
 
 		// Tells each player we found a match and their opponent's username
-		socket.emit('found match', {msg: socketIdToData[opponent.id].username, start: true});
-		opponent.emit('found match', {msg: socketIdToData[socket.id].username, start: false});
+		var rand = Math.random() >= 0.5;
+		socket.emit('found match', {msg: socketIdToData[opponent.id].username, start: rand});
+		opponent.emit('found match', {msg: socketIdToData[socket.id].username, start: !rand});
 	}
 
 	// Creates a 2D array storing piece positions
