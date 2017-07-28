@@ -43,6 +43,7 @@
 		#chat {
 			overflow-y: scroll;
 			width: 100%;
+			border: 1px solid black;
 		}
 
 		#white-trapped {
@@ -71,6 +72,10 @@
 
 		.wgo-board {
 			border: 2px solid black;
+		}
+
+		.chat-bubble {
+			margin-bottom: 5px;
 		}
 
 		.clearfix:after {
@@ -167,7 +172,8 @@
 					</div>
 
 					<div class="panel-body">
-						<textarea id="chat" type="text" rows="12"></textarea>
+						<!-- <textarea id="chat" type="text" rows="12"></textarea> -->
+						<div id="chat"></div>
 
 						<form id="messageForm">
 							<div class="form-group">
@@ -251,7 +257,7 @@
 			$messageForm.submit(function(e) {
 				e.preventDefault();
 
-				var fullMessage = username + ': ' + $('#message').val() + '\n';
+				var fullMessage = '<div class="well well-sm chat-bubble">' + username + ': ' + $('#message').val() + '</div>';
 				socket.emit('send message', {msg: fullMessage});
 				$('#message').val('');
 			});
@@ -272,6 +278,7 @@
 				// Switch to the game area page
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
+				$('#chat').height($('#boardArea').height() * 0.4);
 
 				// Current player makes first move
 				if (data.start) {
@@ -402,7 +409,7 @@
 
 			// Scrolls the chat window down
 			function updateScroll() {
-				$('#chat').animate({ scrollTop: $('#chat').prop("scrollHeight")}, 1000);
+				$('#chat').animate({ scrollTop: $('#chat').prop("scrollHeight")}, 750);
 			}
 		});
 	</script>
