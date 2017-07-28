@@ -308,7 +308,6 @@
 				// Requests a rematch
 				$('#availableRematch').css('display', 'none');
 				$('#requestingRematch').css('display', 'block');
-				// alert("Rematch requested");
 			});
 
 			// Called when a message is received from the opponent
@@ -318,8 +317,96 @@
 
 			// Got paired with another player in the lobby
 			socket.on('found match', function(data) {
+				// Sets opponent username
 				opponent = data.msg;
+				startGame(data.start);
+			});
 
+			// Called when the opponent leaves the game
+			socket.on('opponent left', function(data) {
+				// TODO notify the player
+			});
+
+			// Called when a piece has been placed down (by this user or the opponent)
+			// and the server has validated this move
+			socket.on('piece placed', function(data) {
+				placePiece(data.x, data.y, data.color);
+			});
+
+			// Called when someone wins the game
+			socket.on('game over', function(data) {
+				endGame(data.won);
+			});
+
+			// Called when pieces have been trapped
+			socket.on('trapped pieces', function(data) {
+				removeTrappedPair(data.x1, data.y1, data.x2, data.y2, data.color);
+			});
+
+			// Formats the message depending on if it was sent or received
+			// and adds it to the chat window
+			function addMessageToChatWindow(message, sent) {
+				// Grabs the username and how to style the bubble
+				// depending on who sent it
+				var user = sent ? username : opponent;
+				var styleClass = sent ? 'chat-bubble-sent' : 'chat-bubble-received';
+
+				// Bolds the username but not the message
+				var formattedMessage = '<b>' + user + ':</b> ' + message;
+
+				// Adds the message into a well div
+				var chatBubble = '<div class="well well-sm ' + styleClass + '">' + formattedMessage + '</div>';
+
+				// Adds the well into the chat div and scrolls down
+				$('#chat').append(chatBubble);
+				updateScroll();
+			}
+
+			function sendMessage(message) {
+				// Formats the message and adds it to the chat window
+				addMessageToChatWindow(message, true);
+
+				// Sends the message to the opponent
+				socket.emit('send message', message);
+			}
+
+			function placePiece(x, y, color) {
+				// Updates the rendered canvas with a piece
+				gameBoard.addObject({
+					x: x,
+					y: y,
+					c: color
+				});
+
+				// Updates the game state
+				position.set(x, y, color);
+
+				// Switches the player turn
+				switchPlayerTurn();
+			}
+
+			// Removes two pieces from the board and
+			// increments the trapped count
+			function removeTrappedPair(x1, y1, x2, y2, color) {
+				// Remove the rendered pieces
+				gameBoard.removeObjectsAt(data.x1, data.y1);
+				gameBoard.removeObjectsAt(data.x2, data.y2);
+
+				// Remove the pieces from the local copy
+				position.set(data.x1, data.y1, 0);
+				position.set(data.x2, data.y2, 0);
+
+				// shows the new trapped piece at the bottom
+				var imageString = data.color == WGo.B ? 'img/black_piece_trapped.png' : 'img/white_piece_trapped.png';
+				var colorString = data.color == WGo.B ? 'b' : 'w';
+				var countString = data.count;
+				var fullId = '#piece' + colorString + countString;
+				$(fullId).attr('src', imageString);
+			}
+
+			// Starts the game and formats elements based on 
+			// whether or not the user starts
+			function startGame(firstMove) {
 				// Add player usernames to sidebar
 				$('#player').append(username);
 				$('#opponent').append(opponent);
@@ -329,7 +416,7 @@
 				$gameArea.css('display', 'block');
 
 				// Current player makes first move
-				if (data.start) {
+				if (firstMove) {
 					pieceColor = WGo.W;
 					currentTurn = true;
 					$('#player').toggleClass('selected');
@@ -360,40 +447,19 @@
 
 				// Starts the game
 				gameOver = false;
-			});
+			}
 
-			// Called when the opponent leaves the game
-			socket.on('opponent left', function(data) {
-				// TODO notify the player
-			});
-
-			// Called when a piece has been placed down (by this user or the opponent)
-			// and the server has validated this move
-			socket.on('piece placed', function(data) {
-				// Updates the rendered canvas with a piece
-				gameBoard.addObject({
-					x: data.x,
-					y: data.y,
-					c: data.color
-				});
-
-				// Updates the game state
-				position.set(data.x, data.y, data.color);
-
-				// Switches player turn
-				switchPlayerTurn();
-			});
-
-			// Called when someone wins the game
-			socket.on('game over', function(data) {
+			// Ends the game and formats elements based on
+			// whether or not the user won
+			function endGame(winner) {
 				// Appends the results of the game
-				if (data.won) {
+				if (winner) {
 					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
 				} else {
 					$('#gameMessage').append('<div class="well well-sm">You lose :\'(</div>');
 				}
 
-				// Makes the panel visible
+				// Makes the rematch panel visible
 				$('#gameOverPanel').css('display', 'block');
 				$('#requestingRematch').css('display', 'none');
 
@@ -405,51 +471,6 @@
 				});
 
 				gameOver = true;
-			});
-
-			// Called when pieces have been trapped
-			socket.on('trapped pieces', function(data) {
-				// Remove the rendered pieces
-				gameBoard.removeObjectsAt(data.x1, data.y1);
-				gameBoard.removeObjectsAt(data.x2, data.y2);
-
-				// Remove the pieces from the local copy
-				position.set(data.x1, data.y1, 0);
-				position.set(data.x2, data.y2, 0);
-
-				// shows the new trapped piece at the bottom
-				var imageString = data.color == WGo.B ? 'img/black_piece_trapped.png' : 'img/white_piece_trapped.png';
-				var colorString = data.color == WGo.B ? 'b' : 'w';
-				var countString = data.count;
-				var fullId = '#piece' + colorString + countString;
-				$(fullId).attr('src', imageString);
-			});
-
-			// Formats the message depending on if it was sent or received
-			// and adds it to the chat window
-			function addMessageToChatWindow(message, sent) {
-				// Grabs the username and how to style the bubble
-				// depending on who sent it
-				var user = sent ? username : opponent;
-				var styleClass = sent ? 'chat-bubble-sent' : 'chat-bubble-received';
-
-				// Bolds the username but not the message
-				var formattedMessage = '<b>' + user + ':</b> ' + message;
-
-				// Adds the message into a well div
-				var chatBubble = '<div class="well well-sm ' + styleClass + '">' + formattedMessage + '</div>';
-
-				// Adds the well into the chat div and scrolls down
-				$('#chat').append(chatBubble);
-				updateScroll();
-			}
-
-			function sendMessage(message) {
-				// Formats the message and adds it to the chat window
-				addMessageToChatWindow(message, true);
-
-				// Sends the message to the opponent
-				socket.emit('send message', message);
 			}
 
 			function switchPlayerTurn() {
