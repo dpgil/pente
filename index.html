@@ -32,7 +32,7 @@
 			display: none;
 		}
 
-		#boardArea {
+		#gameContainer {
 			/*not sure why there is padding 
 			automatically added but this fixes it*/
 			padding-right: 0;
@@ -41,12 +41,12 @@
 
 		#board {
 			display:none;
-			position:absolute;
 		}
 
 		#gameOverPanel {
 			display: none;
 			position:absolute;
+			z-index:1000;
 		}
 
 		#chat {
@@ -81,7 +81,6 @@
 
 		#boardPlaceholder {
 			border: 2px solid black;
-			position:absolute;
 		}
 
 		#rematch {
@@ -133,19 +132,19 @@
 <body>
 	<div class="container">
 		<!-- game board -->
-		<div id="boardArea" class="col-md-7">
-			<img id="boardPlaceholder"></img>
-			<div id="board"></div>
-			
-			<!-- game messages -->
-			<div id="gameOverPanel" class="panel panel-default">
-				<div class="panel-body">
-					<div id="gameMessage">
-						<div class="well well-sm">Game over. You won!!!</div>
+		<div id="gameContainer" class="col-md-7">
+			<div>
+				<img id="boardPlaceholder" />
+				<div id="board"></div>
+				
+				<!-- game messages -->
+				<div id="gameOverPanel" class="panel panel-default">
+					<div class="panel-body">
+						<div id="gameMessage"></div>
+						<form id="rematchForm">
+							<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
+						</form>
 					</div>
-					<form id="rematchForm">
-						<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
-					</form>
 				</div>
 			</div>
 			<br />
@@ -387,15 +386,15 @@
 					$('#gameMessage').append('<div class="well well-sm">You lose :\'(</div>');
 				}
 
+				// Makes the panel visible
+				$('#gameOverPanel').css('display', 'block');
+
 				// Centers the panel on top of the board. Not necessarily 
 				// elegant but it works
 				$('#gameOverPanel').css({
 					top: ($('#board').height() / 2 - $('#gameOverPanel').height() / 2) + 'px',
-					left: ($('#board').width() / 2 - $('#gameOverPanel').width() / 2) + 'px'
+					left: ($('#board').height() / 2 - $('#gameOverPanel').width() / 2) + 'px'
 				});
-
-				// Makes the panel visible
-				$('#gameOverPanel').css('display', 'block');
 
 				gameOver = true;
 			});
