@@ -139,11 +139,16 @@
 				
 				<!-- game messages -->
 				<div id="gameOverPanel" class="panel panel-default">
-					<div class="panel-body">
+					<div class="panel-body" id="availableRematch">
 						<div id="gameMessage"></div>
 						<form id="rematchForm">
 							<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
 						</form>
+					</div>
+
+					<div class="panel-body" id="requestingRematch">
+						<p class="text-center">Requesting rematch</p>
+						<center><img src="img/ajax-loader.gif" /></center>
 					</div>
 				</div>
 			</div>
@@ -187,7 +192,7 @@
 				<div class="panel panel-default">
 					<div class="panel-body">
 						<p class="text-center">Waiting for opponent to join</p>
-						<center><img id="loading" src="img/ajax-loader.gif" /></center>
+						<center><img src="img/ajax-loader.gif" /></center>
 					</div>
 				</div>
 			</div>
@@ -301,7 +306,9 @@
 				e.preventDefault();
 
 				// Requests a rematch
-				alert("Rematch requested");
+				$('#availableRematch').css('display', 'none');
+				$('#requestingRematch').css('display', 'block');
+				// alert("Rematch requested");
 			});
 
 			// Called when a message is received from the opponent
@@ -388,6 +395,7 @@
 
 				// Makes the panel visible
 				$('#gameOverPanel').css('display', 'block');
+				$('#requestingRematch').css('display', 'none');
 
 				// Centers the panel on top of the board. Not necessarily 
 				// elegant but it works
@@ -401,8 +409,6 @@
 
 			// Called when pieces have been trapped
 			socket.on('trapped pieces', function(data) {
-				console.log('Trapped piece!!');
-
 				// Remove the rendered pieces
 				gameBoard.removeObjectsAt(data.x1, data.y1);
 				gameBoard.removeObjectsAt(data.x2, data.y2);
