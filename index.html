@@ -54,6 +54,14 @@
 			float:right;
 		}
 
+		#white-turn-piece {
+			float:right;
+		}
+
+		#black-turn-piece {
+			float:right;
+		}
+
 		#trapped-pieces {
 			width:100%;
 			border-radius:50px;
@@ -298,14 +306,22 @@
 					currentTurn = true;
 					$('#player').toggleClass('selected');
 					$('#player').toggleClass('list-group-item-success');
-					$('#opponent').toggleClass('list-group-item-danger');
+
+					$('#player').append('<img id="white-turn-piece" src="img/white_piece_trapped.png"></img>');
+					$('#opponent').append('<img id="black-turn-piece" src="img/black_piece_trapped.png"></img>');
 				} else {
 					pieceColor = WGo.B;
 					currentTurn = false;
 					$('#opponent').toggleClass('selected');
 					$('#opponent').toggleClass('list-group-item-success');
-					$('#player').toggleClass('list-group-item-danger');
+
+					$('#opponent').append('<img id="white-turn-piece" src="img/white_piece_trapped.png"></img>');
+					$('#player').append('<img id="black-turn-piece" src="img/black_piece_trapped.png"></img>');
 				}
+				
+				$('#white-turn-piece').height($('#white-turn-piece').parent().height());
+				$('#black-turn-piece').height($('#black-turn-piece').parent().height());
+
 
 				// Render game board
 				renderGameBoard();
@@ -399,9 +415,9 @@
 			function switchPlayerTurn() {
 				currentTurn = !currentTurn;
 
-				// Switches between selected player and green/red background
-				$('#player').toggleClass('list-group-item-danger').toggleClass('list-group-item-success').toggleClass('selected');
-				$('#opponent').toggleClass('list-group-item-danger').toggleClass('list-group-item-success').toggleClass('selected');
+				// Switches between selected player and green background
+				$('#player').toggleClass('list-group-item-success').toggleClass('selected');
+				$('#opponent').toggleClass('list-group-item-success').toggleClass('selected');
 			}
 
 			// Initializes the game board
