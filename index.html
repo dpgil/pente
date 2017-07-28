@@ -41,10 +41,12 @@
 
 		#board {
 			display:none;
+			position:absolute;
 		}
 
-		#gameMessagePanel {
+		#gameOverPanel {
 			display: none;
+			position:absolute;
 		}
 
 		#chat {
@@ -79,6 +81,11 @@
 
 		#boardPlaceholder {
 			border: 2px solid black;
+			position:absolute;
+		}
+
+		#rematch {
+			width:100%;
 		}
 
 		.selected {
@@ -129,6 +136,18 @@
 		<div id="boardArea" class="col-md-7">
 			<img id="boardPlaceholder"></img>
 			<div id="board"></div>
+			
+			<!-- game messages -->
+			<div id="gameOverPanel" class="panel panel-default">
+				<div class="panel-body">
+					<div id="gameMessage">
+						<div class="well well-sm">Game over. You won!!!</div>
+					</div>
+					<form id="rematchForm">
+						<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
+					</form>
+				</div>
+			</div>
 			<br />
 			<div id="trapped-pieces" class="clearfix">
 				<div id="white-trapped" class="panel-body" align="left">
@@ -208,13 +227,6 @@
 						</form>
 					</div>
 				</div>
-
-				<!-- game messages -->
-				<div id="gameMessagePanel" class="panel panel-default">
-					<div class="panel-body">
-						<div id="gameMessage"></div>
-					</div>	
-				</div>
 			</div>			
 		</div>
 	</div>
@@ -224,6 +236,7 @@
 			var socket = io.connect();
 
 			var $messageForm = $('#messageForm');
+			var $rematchForm = $('#rematchForm');
 			var $lobbyArea = $('#lobbyArea');
 			var $loginArea = $('#loginArea');
 			var $loginForm = $('#loginForm');
@@ -252,7 +265,7 @@
 				$placeholder.width(width);
 				$placeholder.height(width);
 
-				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg')
+				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg');
 			}
 
 			// Sizes the trapped pieces at the bottom of the game area
@@ -285,6 +298,13 @@
 				$('#message').val('');
 			});
 
+			$rematchForm.submit(function(e) {
+				e.preventDefault();
+
+				// Requests a rematch
+				alert("Rematch requested");
+			});
+
 			// Called when a message is received from the opponent
 			socket.on('new message', function(data) {
 				addMessageToChatWindow(data, false);
@@ -301,7 +321,6 @@
 				// Switch to the game area page
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
-				$('#chat').height($('#boardArea').height() * 0.4);
 
 				// Current player makes first move
 				if (data.start) {
@@ -322,12 +341,16 @@
 					$('#player').append('<img id="black-turn-piece" src="img/black_piece_trapped.png"></img>');
 				}
 				
+				// Sets the sizes of the player color indicators
 				$('#white-turn-piece').height($('#white-turn-piece').parent().height());
 				$('#black-turn-piece').height($('#black-turn-piece').parent().height());
 
 
 				// Render game board
 				renderGameBoard();
+
+				// Sets the height of the chat window relative to the board size
+				$('#chat').height($('#board').height() * 0.4);
 
 				// Starts the game
 				gameOver = false;
@@ -357,13 +380,22 @@
 
 			// Called when someone wins the game
 			socket.on('game over', function(data) {
-				$('#gameMessagePanel').css('display', 'block');
-
+				// Appends the results of the game
 				if (data.won) {
 					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
 				} else {
-					$('#gameMessage').append('<div class="well well-sm">You lose :(</div>');
+					$('#gameMessage').append('<div class="well well-sm">You lose :\'(</div>');
 				}
+
+				// Centers the panel on top of the board. Not necessarily 
+				// elegant but it works
+				$('#gameOverPanel').css({
+					top: ($('#board').height() / 2 - $('#gameOverPanel').height() / 2) + 'px',
+					left: ($('#board').width() / 2 - $('#gameOverPanel').width() / 2) + 'px'
+				});
+
+				// Makes the panel visible
+				$('#gameOverPanel').css('display', 'block');
 
 				gameOver = true;
 			});
