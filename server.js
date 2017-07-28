@@ -48,6 +48,57 @@ io.sockets.on('connection', function(socket) {
 		placePiece(data.x, data.y, data.color);
 	});
 
+	// Called when a player presses the request rematch button after a game ends
+	socket.on('request rematch', function() {
+		requestRematch();
+	});
+
+	// Requests a rematch or immediately starts on if the opponent has already requested one too
+	function requestRematch() {
+		// Check if the opponent also wanted a rematch
+		var opponent = socketIdToData[socket.id].opponent;
+		var opponentWantsRematch = socketIdToData[opponent.id].rematch;
+
+		// If opponent wants a rematch, creates one immediately
+		// Otherwise, waits for the opponent
+		if (opponentWantsRematch) {
+			// Resets rematch values for the next game
+			socketIdToData[opponent.id].rematch = false;
+			socketIdToData[socket.id].rematch = false;
+
+			startRematch();
+		} else {
+			socketIdToData[socket.id].rematch = true;
+		}
+	}
+
+	// Restarts a new game
+	// Slightly different from completely starting a new game
+	// because the same opponents will be used
+	function startRematch() {
+		// Assigns a new game id
+		var gameId = getGameId();
+
+		// Same opponent as before
+		var opponent = socketIdToData[socket.id].opponent;
+
+		// Sets the new id in our player map
+		socketIdToData[socket.id].gameId = gameId;
+		socketIdToData[opponent.id].gameId = gameId;
+
+		// Initializes a new game state
+		var gameState = createGameState();
+		gameIdToGameState[gameId] = gameState;
+
+		// Adds players to the new game room
+		socket.join(gameId);
+		opponent.join(gameId);
+
+		// Tells each player we're starting a rematch and who starts
+		socket.emit('starting rematch', {start: true});
+		opponent.emit('starting rematch', {start: false});
+	}
+
 	// Allows the current socket to join the lobby with
 	// the specified username. Tries to pair it with an opponent
 	function joinLobby(username) {
@@ -134,6 +185,10 @@ io.sockets.on('connection', function(socket) {
 		// notify loser
 		var opponent = socketIdToData[socket.id].opponent;
 		opponent.emit('game over', {won: false});
+
+		// sets their rematch boolean values
+		socketIdToData[socket.id].rematch = false;
+		socketIdToData[opponent.id].rematch = false;
 
 		// TODO remove players from the game room
 	}

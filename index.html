@@ -63,11 +63,11 @@
 			float:right;
 		}
 
-		#white-turn-piece {
+		#playerPiece {
 			float:right;
 		}
 
-		#black-turn-piece {
+		#opponentPiece {
 			float:right;
 		}
 
@@ -203,8 +203,14 @@
 				<div id="playerNames" class="panel panel-default">
 					<div class="panel-body">
 						<ul class="list-group">
-							<li id="player" class="list-group-item"></li>
-							<li id="opponent" class="list-group-item"></li>
+							<li id="player" class="list-group-item">
+								<p id="playerUsername"></p>
+								<img id="playerPiece" />
+							</li>
+							<li id="opponent" class="list-group-item">
+								<p id="opponentUsername"></p>
+								<img id="opponentPiece" />
+							</li>
 						</ul>
 					</div>
 				</div>
@@ -254,60 +260,29 @@
 			var position; 	// stores game state of each cell
 			var currentTurn;// true if it is the current player's turn, false otherwise
 			var gameOver;	// true if the game is over
+			var size;		// number of cells on the board
 
 			window.onload = function() {
 				setupBoardPlaceholder();
 				setupTrappedPieces();
 			}
 
-			// Adds a placeholder image for the board so the
-			// pente lines don't appear until the game starts
-			function setupBoardPlaceholder() {
-				var $placeholder = $('#boardPlaceholder');
-				var width = $placeholder.parent().width();
-
-				$placeholder.width(width);
-				$placeholder.height(width);
-
-				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg');
-			}
-
-			// Sizes the trapped pieces at the bottom of the game area
-			function setupTrappedPieces() {
-				$('.trapped-piece').height(0.05 * $('#boardPlaceholder').height());
-			}
-
 			$loginForm.submit(function(e) {
 				e.preventDefault();
 
-				// push username to server
-				username = $username.val();
-				if (username === '') username = 'Anonymous';
-				socket.emit('join lobby', username);
-				$username.val('');
-
-				// move from login screen to game screen
-				$loginArea.css('display', 'none');
-				$lobbyArea.css('display', 'block');
+				loginUser();
 			});
 
 			$messageForm.submit(function(e) {
 				e.preventDefault();
 
-				// Grabs the message
-				var message = $('#message').val();
-				sendMessage(message);
-
-				// Clears the message input
-				$('#message').val('');
+				sendMessage();
 			});
 
 			$rematchForm.submit(function(e) {
 				e.preventDefault();
 
-				// Requests a rematch
-				$('#availableRematch').css('display', 'none');
-				$('#requestingRematch').css('display', 'block');
+				requestRematch();
 			});
 
 			// Called when a message is received from the opponent
@@ -343,6 +318,112 @@
 				removeTrappedPair(data.x1, data.y1, data.x2, data.y2, data.color);
 			});
 
+			// Called when both players agree to a rematch
+			socket.on('starting rematch', function(data) {
+				startRematch(data.start);
+			});
+
+			// Starts a rematch, clears the board
+			function startRematch(firstMove) {
+				// clear rematch panel
+				clearRematchPanel();
+
+				// clear the board
+				clearGameBoard();
+
+				// clear the trapped pieces
+				resetTrappedPieces();
+
+				// adjust what color each person is
+				formatPlayerTurn(firstMove);
+
+				gameOver = false;
+			}
+
+			function clearRematchPanel() {
+				$('#gameOverPanel').css('display', 'none');
+			}
+
+			// Clears the game state and the rendered board
+			function clearGameBoard() {
+				for (let i = 0; i < size; i++) {
+					for (let j = 0; j < size; j++) {
+						// Remove the piece graphically
+						gameBoard.removeObjectsAt(i, j);
+
+						// Remove the pieces from the local copy
+						position.set(i, j, 0);
+					}
+				}
+			}
+
+			// Resets all the trapped pieces to untrapped
+			function resetTrappedPieces() {
+				var white_id_base = "piecew";
+				var black_id_base = "pieceb";
+
+				for (let i = 1; i <= 5; i++) {
+					$(white_id_base + i).attr('src', 'img/white_piece_untrapped.png');
+					$(black_id_base + i).attr('src', 'img/black_piece_untrapped.png');
+				}
+			}
+
+			// Called when the user presses the rematch button after a game ends
+			function requestRematch() {
+				// Changes the rematch panel from showing the button
+				// to showing a 'requesting rematch' with a loading gif
+				$('#availableRematch').css('display', 'none');
+				$('#requestingRematch').css('display', 'block');
+
+				// Notifies the server of the rematch request
+				socket.emit('request rematch');
+			}
+
+			// Adds the user to the lobby with the specified username
+			function loginUser() {
+				// push username to server
+				username = $username.val();
+				if (username === '') username = 'Anonymous';
+				socket.emit('join lobby', username);
+				$username.val('');
+
+				// move from login screen to game screen
+				$loginArea.css('display', 'none');
+				$lobbyArea.css('display', 'block');
+			}
+
+			// Sends whatever was in the user's chat input
+			function sendMessage() {
+				// Grabs the message
+				var message = $('#message').val();
+
+				// Formats the message and adds it to the chat window
+				addMessageToChatWindow(message, true);
+
+				// Sends the message to the opponent
+				socket.emit('send message', message);
+
+				// Clears the message input
+				$('#message').val('');
+			}
+
+			// Adds a placeholder image for the board so the
+			// pente lines don't appear until the game starts
+			function setupBoardPlaceholder() {
+				var $placeholder = $('#boardPlaceholder');
+				var width = $placeholder.parent().width();
+
+				$placeholder.width(width);
+				$placeholder.height(width);
+
+				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg');
+			}
+
+			// Sizes the trapped pieces at the bottom of the game area
+			function setupTrappedPieces() {
+				$('.trapped-piece').height(0.05 * $('#boardPlaceholder').height());
+			}
+
 			// Formats the message depending on if it was sent or received
 			// and adds it to the chat window
 			function addMessageToChatWindow(message, sent) {
@@ -360,14 +441,6 @@
 				// Adds the well into the chat div and scrolls down
 				$('#chat').append(chatBubble);
 				updateScroll();
-			}
-
-			function sendMessage(message) {
-				// Formats the message and adds it to the chat window
-				addMessageToChatWindow(message, true);
-
-				// Sends the message to the opponent
-				socket.emit('send message', message);
 			}
 
 			function placePiece(x, y, color) {
@@ -389,17 +462,17 @@
 			// increments the trapped count
 			function removeTrappedPair(x1, y1, x2, y2, color) {
 				// Remove the rendered pieces
-				gameBoard.removeObjectsAt(data.x1, data.y1);
-				gameBoard.removeObjectsAt(data.x2, data.y2);
+				gameBoard.removeObjectsAt(x1, y1);
+				gameBoard.removeObjectsAt(x2, y2);
 
 				// Remove the pieces from the local copy
-				position.set(data.x1, data.y1, 0);
-				position.set(data.x2, data.y2, 0);
+				position.set(x1, y1, 0);
+				position.set(x2, y2, 0);
 
 				// shows the new trapped piece at the bottom
-				var imageString = data.color == WGo.B ? 'img/black_piece_trapped.png' : 'img/white_piece_trapped.png';
-				var colorString = data.color == WGo.B ? 'b' : 'w';
-				var countString = data.count;
+				var imageString = color == WGo.B ? 'img/black_piece_trapped.png' : 'img/white_piece_trapped.png';
+				var colorString = color == WGo.B ? 'b' : 'w';
+				var countString = count;
 				var fullId = '#piece' + colorString + countString;
 				$(fullId).attr('src', imageString);
 			}
@@ -408,37 +481,16 @@
 			// whether or not the user starts
 			function startGame(firstMove) {
 				// Add player usernames to sidebar
-				$('#player').append(username);
-				$('#opponent').append(opponent);
+				$('#playerUsername').append(username);
+				$('#opponentUsername').append(opponent);
 
 				// Switch to the game area page
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
 
-				// Current player makes first move
-				if (firstMove) {
-					pieceColor = WGo.W;
-					currentTurn = true;
-					$('#player').toggleClass('selected');
-					$('#player').toggleClass('list-group-item-success');
-
-					$('#player').append('<img id="white-turn-piece" src="img/white_piece_trapped.png" />');
-					$('#opponent').append('<img id="black-turn-piece" src="img/black_piece_trapped.png" />');
-				} else {
-					pieceColor = WGo.B;
-					currentTurn = false;
-					$('#opponent').toggleClass('selected');
-					$('#opponent').toggleClass('list-group-item-success');
-
-					$('#opponent').append('<img id="white-turn-piece" src="img/white_piece_trapped.png" />');
-					$('#player').append('<img id="black-turn-piece" src="img/black_piece_trapped.png" />');
-				}
+				// Formats elements based on whos turn it is
+				formatPlayerTurn(firstMove);
 				
-				// Sets the sizes of the player color indicators
-				$('#white-turn-piece').height($('#white-turn-piece').parent().height());
-				$('#black-turn-piece').height($('#black-turn-piece').parent().height());
-
-
 				// Render game board
 				renderGameBoard();
 
@@ -449,9 +501,43 @@
 				gameOver = false;
 			}
 
+			// Formats player elements based on if they start or not
+			function formatPlayerTurn(firstMove) {
+				// Current player makes first move
+				if (firstMove) {
+					pieceColor = WGo.W;
+					currentTurn = true;
+					$('#player').toggleClass('selected');
+					$('#player').toggleClass('list-group-item-success');
+
+					$('#playerPiece').attr('src', 'img/white_piece_trapped.png');
+					$('#opponentPiece').attr('src', 'img/black_piece_trapped.png');
+				} else {
+					pieceColor = WGo.B;
+					currentTurn = false;
+					$('#opponent').toggleClass('selected');
+					$('#opponent').toggleClass('list-group-item-success');
+
+					$('#opponentPiece').attr('src', 'img/white_piece_trapped.png');
+					$('#playerPiece').attr('src', 'img/black_piece_trapped.png');
+				}
+
+				// Sets the sizes of the player color indicators
+				$('#playerPiece').height($('#playerPiece').parent().height());
+				$('#opponentPiece').height($('#opponentPiece').parent().height());
+
+			}
+
 			// Ends the game and formats elements based on
 			// whether or not the user won
 			function endGame(winner) {
+				// Clears player turn highlighting
+				if (currentTurn) {
+					$('#player').toggleClass('list-group-item-success').toggleClass('selected');
+				} else {
+					$('#opponent').toggleClass('list-group-item-success').toggleClass('selected');
+				}
+
 				// Appends the results of the game
 				if (winner) {
 					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
@@ -461,6 +547,7 @@
 
 				// Makes the rematch panel visible
 				$('#gameOverPanel').css('display', 'block');
+				$('#availableRematch').css('display', 'block');
 				$('#requestingRematch').css('display', 'none');
 
 				// Centers the panel on top of the board. Not necessarily 
@@ -490,7 +577,7 @@
 
 				// Fills the parent bootstrap column
 				var width = $('#board').parent().width();
-				var size = 19;
+				size = 19;
 
 				// Initializes board rendering element
 				gameBoard = new WGo.Board(document.getElementById('board'), {
