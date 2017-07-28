@@ -9,3 +9,5 @@ Features:
 </ul>
 
 Implemented using socket.io for the real-time communication and wgo.js for the board graphics
+
+Hosted on https://pente-online.herokuapp.com/
