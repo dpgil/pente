@@ -325,7 +325,7 @@
 
 			// Called when pieces have been trapped
 			socket.on('trapped pieces', function(data) {
-				removeTrappedPair(data.x1, data.y1, data.x2, data.y2, data.color);
+				removeTrappedPair(data.x1, data.y1, data.x2, data.y2, data.color, data.count);
 			});
 
 			// Called when both players agree to a rematch
@@ -369,8 +369,8 @@
 
 			// Resets all the trapped pieces to untrapped
 			function resetTrappedPieces() {
-				var white_id_base = "piecew";
-				var black_id_base = "pieceb";
+				var white_id_base = "#piecew";
+				var black_id_base = "#pieceb";
 
 				for (let i = 1; i <= 5; i++) {
 					$(white_id_base + i).attr('src', 'img/white_piece_untrapped.png');
@@ -426,7 +426,7 @@
 				$placeholder.width(width);
 				$placeholder.height(width);
 
-				$placeholder.attr('src', 'https://raw.githubusercontent.com/waltheri/wgo.js/master/wgo/wood_1024.jpg');
+				$placeholder.attr('src', 'img/wood_1024.jpg');
 			}
 
 			// Sizes the trapped pieces at the bottom of the game area
@@ -470,7 +470,7 @@
 
 			// Removes two pieces from the board and
 			// increments the trapped count
-			function removeTrappedPair(x1, y1, x2, y2, color) {
+			function removeTrappedPair(x1, y1, x2, y2, color, count) {
 				// Remove the rendered pieces
 				gameBoard.removeObjectsAt(x1, y1);
 				gameBoard.removeObjectsAt(x2, y2);
@@ -549,6 +549,7 @@
 				}
 
 				// Appends the results of the game
+				$('#gameMessage').empty();
 				if (winner) {
 					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
 				} else {
