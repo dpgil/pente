@@ -20,6 +20,10 @@
 			width:100%;
 		}
 
+		canvas {
+			border: 1px solid black;
+		}
+
 		#lobbyArea {
 			display: none;
 		}
@@ -52,6 +56,11 @@
 			display: none;
 			position:absolute;
 			z-index:1000;
+			margin-bottom:0px;
+		}
+
+		#availableRematch {
+			padding: 20px;
 		}
 
 		#chat {
@@ -89,13 +98,13 @@
 		#trapped-pieces {
 			width:100%;
 			border-radius:50px;
-			border:2px solid black;
+			border:1px solid black;
 			background-color:grey;
 			display:none;
 		}
 
 		#boardPlaceholder {
-			border: 2px solid black;
+			border: 1px solid black;
 		}
 
 		#rematch {
@@ -104,10 +113,6 @@
 
 		.selected {
 			font-weight: bold;
-		}
-
-		.wgo-board {
-			border: 2px solid black;
 		}
 
 		.chat-bubble-sent {
@@ -142,15 +147,7 @@
 		    height: 1%;
 		}
 
-		.list-group {
-			margin-bottom:0px;
-		}
-
-		.form-group {
-			margin-bottom: 0px;
-		}
-
-		.label {
+		.no-bottom {
 			margin-bottom:0px;
 		}
 	</style>
@@ -165,17 +162,19 @@
 				<div id="board"></div>
 				
 				<!-- game messages -->
-				<div id="gameOverPanel" class="panel panel-default">
-					<div class="panel-body" id="availableRematch">
-						<h1 id="gameMessage"></h1>
-						<form id="rematchForm">
-							<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
-						</form>
-					</div>
+				<div id="gameOverPanel">
+					<div class="panel panel-default no-bottom">
+						<div class="panel-body" id="availableRematch">
+							<h1 id="gameMessage"></h1>
+							<form id="rematchForm">
+								<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
+							</form>
+						</div>
 
-					<div class="panel-body" id="requestingRematch">
-						<p class="text-center">Requesting rematch</p>
-						<center><img src="img/ajax-loader.gif" /></center>
+						<div class="panel-body" id="requestingRematch">
+							<p class="text-center">Requesting rematch</p>
+							<center><img src="img/ajax-loader.gif" /></center>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -229,7 +228,7 @@
 				<!-- displays player names -->
 				<div id="playerNames" class="panel panel-default">
 					<div class="panel-body">
-						<ul class="list-group">
+						<ul class="list-group no-bottom">
 							<li id="player" class="list-group-item">
 								<p id="playerUsername"></p>
 								<img id="playerPiece" />
@@ -245,14 +244,14 @@
 				<!-- chat window -->
 				<div id="chatWindow" class="panel panel-default">
 					<div class="panel-heading">
-						<label>Chat</label>
+						<label class="no-bottom">Chat</label>
 					</div>
 
 					<div class="panel-body">
 						<div id="chat"></div>
 
 						<form id="messageForm">
-							<div class="form-group">
+							<div class="form-group no-bottom">
 								<br />
 								<div class="input-group">
 									<input class="form-control" id="message" placeholder="Enter message" />
@@ -401,6 +400,9 @@
 				// to showing a 'requesting rematch' with a loading gif
 				$('#availableRematch').css('display', 'none');
 				$('#requestingRematch').css('display', 'block');
+
+				// Centers the panel
+				centerGameOverPanel();
 
 				// Notifies the server of the rematch request
 				socket.emit('request rematch');
@@ -578,14 +580,24 @@
 				$('#availableRematch').css('display', 'block');
 				$('#requestingRematch').css('display', 'none');
 
-				// Centers the panel on top of the board. Not necessarily 
-				// elegant but it works
-				$('#gameOverPanel').css({
-					top: ($('#board').height() / 2 - $('#gameOverPanel').height() / 2) + 'px',
-					left: ($('#board').height() / 2 - $('#gameOverPanel').width() / 2) + 'px'
-				});
+				// Centers the panel on top of the board
+				centerGameOverPanel();
 
 				gameOver = true;
+			}
+
+			function centerGameOverPanel() {
+				// Not necessarily an elegant solution but it works
+				var $panel = $('#gameOverPanel');
+				var $parent = $panel.parent();
+
+				var top = $parent.height() / 2 - $panel.height() / 2;
+				var left = $parent.width() / 2 - $panel.width() / 2;
+
+				$panel.css({
+					top: top+'px',
+					left: left+'px'
+				});
 			}
 
 			function switchPlayerTurn() {
