@@ -39,6 +39,11 @@
 			padding-left: 0;
 		}
 
+		#gameMessage {
+			margin-top:0px;
+			margin-bottom:15px;
+		}
+
 		#board {
 			display:none;
 		}
@@ -162,7 +167,7 @@
 				<!-- game messages -->
 				<div id="gameOverPanel" class="panel panel-default">
 					<div class="panel-body" id="availableRematch">
-						<div id="gameMessage"></div>
+						<h1 id="gameMessage"></h1>
 						<form id="rematchForm">
 							<button type="submit" id="rematch" class="btn btn-primary">Rematch</button>
 						</form>
@@ -563,9 +568,9 @@
 				// Appends the results of the game
 				$('#gameMessage').empty();
 				if (winner) {
-					$('#gameMessage').append('<div class="well well-sm">You win!!!</div>');
+					$('#gameMessage').append('You win!!!');
 				} else {
-					$('#gameMessage').append('<div class="well well-sm">You lose :\'(</div>');
+					$('#gameMessage').append('You lose :\'(');
 				}
 
 				// Makes the rematch panel visible
