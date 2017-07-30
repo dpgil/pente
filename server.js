@@ -55,6 +55,11 @@ io.sockets.on('connection', function(socket) {
 
 	// Requests a rematch or immediately starts on if the opponent has already requested one too
 	function requestRematch() {
+		// Prevents crash
+		if (!(socket.id in socketIdToData)) {
+			return;
+		}
+
 		// Check if the opponent also wanted a rematch
 		var opponent = socketIdToData[socket.id].opponent;
 		var opponentWantsRematch = socketIdToData[opponent.id].rematch;
@@ -113,8 +118,11 @@ io.sockets.on('connection', function(socket) {
 
 	// Sends a message to the player's opponent
 	function sendMessageToOpponent(message) {
-		var opponent = socketIdToData[socket.id].opponent;
-		opponent.emit('new message', message);
+		// Prevents crash
+		if (socket.id in socketIdToData) {
+			var opponent = socketIdToData[socket.id].opponent;
+			opponent.emit('new message', message);
+		}
 	}
 
 	// Removes the player from the current game or the lobby
@@ -133,6 +141,11 @@ io.sockets.on('connection', function(socket) {
 
 	// When a player places a piece on a board
 	function placePiece(x, y, color) {
+		// Prevents crash
+		if (!(socket.id in socketIdToData)) {
+			return;
+		}
+
 		// get player game id
 		var gameId = socketIdToData[socket.id].gameId;
 
