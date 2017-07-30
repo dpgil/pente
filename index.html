@@ -589,13 +589,15 @@
 			// whether or not the user won
 			function endGame(winner) {
 				// Clears player turn highlighting
-				if (currentTurn) {
-					$('#player').toggleClass('list-group-item-success').toggleClass('selected');
-				} else {
-					$('#opponent').toggleClass('list-group-item-success').toggleClass('selected');
-				}
+				clearPlayerHighlighting();
 
 				// Appends the results of the game
+				showGameOverPanel(winner);
+
+				gameOver = true;
+			}
+
+			function showGameOverPanel(winner) {
 				$('#gameMessage').empty();
 				if (winner) {
 					$('#gameMessage').append('You win!!!');
@@ -611,8 +613,14 @@
 
 				// Centers the panel on top of the board
 				centerGameOverPanel();
+			}
 
-				gameOver = true;
+			function clearPlayerHighlighting() {
+				if (currentTurn) {
+					$('#player').toggleClass('list-group-item-success').toggleClass('selected');
+				} else {
+					$('#opponent').toggleClass('list-group-item-success').toggleClass('selected');
+				}
 			}
 
 			function centerGameOverPanel() {
