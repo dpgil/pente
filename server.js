@@ -134,6 +134,9 @@ io.sockets.on('connection', function(socket) {
 			// Player was in a game, notify their opponent
 			var gameId = socketIdToData[socket.id].gameId;
 			io.to(gameId).emit('opponent left');
+
+			// Remove it from socketIdToData
+			delete socketIdToData[socket.id];
 		}
 
 		console.log('Socket disconnected');

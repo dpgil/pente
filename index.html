@@ -49,6 +49,11 @@
 			margin-bottom:15px;
 		}
 
+		#opponentLeftMessage {
+			margin: 0px;
+			margin-bottom:15px;
+		}
+
 		#board {
 			display:none;
 		}
@@ -62,6 +67,10 @@
 
 		#availableRematch {
 			padding: 20px;
+		}
+
+		#opponentLeft {
+			padding:20px;
 		}
 
 		#chat {
@@ -110,6 +119,10 @@
 		}
 
 		#rematch {
+			width:100%;
+		}
+
+		#newmatch {
 			width:100%;
 		}
 
@@ -184,6 +197,18 @@
 
 						<div class="panel-body" id="requestingRematch">
 							<p class="text-center">Requesting rematch</p>
+							<center><img src="img/ajax-loader.gif" /></center>
+						</div>
+
+						<div class="panel-body" id="opponentLeft">
+							<h1 id="opponentLeftMessage"></h1>
+							<form id="findNewMatchForm">
+								<button type="submit" id="newmatch" class="btn btn-primary">Find a new match</button>
+							</form>
+						</div>
+
+						<div class="panel-body" id="findingNewMatch">
+							<p class="text-center">Finding new match</p>
 							<center><img src="img/ajax-loader.gif" /></center>
 						</div>
 					</div>
@@ -281,6 +306,7 @@
 		$(function() {
 			var socket = io.connect();
 
+			var $findNewMatchForm = $('#findNewMatchForm');
 			var $messageForm = $('#messageForm');
 			var $rematchForm = $('#rematchForm');
 			var $lobbyArea = $('#lobbyArea');
@@ -297,6 +323,7 @@
 			var currentTurn;// true if it is the current player's turn, false otherwise
 			var gameOver;	// true if the game is over
 			var size;		// number of cells on the board
+			var boardRendered = false; // if the game board has already been rendered
 
 			/* Variables for confetti */
 			var particles;
@@ -330,6 +357,12 @@
 				requestRematch();
 			});
 
+			$findNewMatchForm.submit(function (e) {
+				e.preventDefault();
+
+				findNewMatch();
+			});
+
 			// Called when a message is received from the opponent
 			socket.on('new message', function(data) {
 				addMessageToChatWindow(data, false);
@@ -345,6 +378,7 @@
 			// Called when the opponent leaves the game
 			socket.on('opponent left', function(data) {
 				// TODO notify the player
+				opponentLeft();
 			});
 
 			// Called when a piece has been placed down (by this user or the opponent)
@@ -367,6 +401,42 @@
 			socket.on('starting rematch', function(data) {
 				startRematch(data.start);
 			});
+
+			// When an opponent has left, and the user clicks to 
+			// rejoin the matchmaking process
+			function findNewMatch() {	
+				// Rejoins the lobby
+				socket.emit('join lobby', username);
+
+				// Shows a loading button
+				$('#opponentLeft').css('display', 'none');
+				$('#findingNewMatch').css('display', 'block');
+				centerGameOverPanel();
+			}
+
+			function opponentLeft() {
+				clearPlayerHighlighting();
+				showOpponentLeftPanel();
+
+				gameOver = true;
+			}
+
+			function showOpponentLeftPanel() {
+				$('#gameOverPanel').css('display', 'block');
+				$('#availableRematch').css('display', 'none');
+				$('#requestingRematch').css('display', 'none');
+				$('#findingNewMatch').css('display', 'none');
+				$('#opponentLeft').css('display', 'block');
+
+				$('#opponentLeftMessage').empty();
+				$('#opponentLeftMessage').append(opponent + ' has left the game.');
+
+				centerGameOverPanel();
+			}
+
+			function clearChatHistory() {
+				$('#chat').empty();
+			}
 
 			// Starts a rematch, clears the board
 			function startRematch(firstMove) {
@@ -538,18 +608,33 @@
 			// whether or not the user starts
 			function startGame(firstMove) {
 				// Add player usernames to sidebar
+				$('#playerUsername').empty();
 				$('#playerUsername').append(username);
+				$('#opponentUsername').empty();
 				$('#opponentUsername').append(opponent);
 
 				// Switch to the game area page
+				$('#gameOverPanel').css('display', 'none');
 				$lobbyArea.css('display', 'none');
 				$gameArea.css('display', 'block');
 
 				// Formats elements based on whos turn it is
 				formatPlayerTurn(firstMove);
 				
-				// Render game board
-				renderGameBoard();
+				// game board has already been rendered,
+				// lets not make it again
+				if (boardRendered) {
+					// clear the board
+					clearGameBoard();
+
+					// clear the trapped pieces
+					resetTrappedPieces();
+				} else {
+					// Render game board
+					renderGameBoard();	
+				}
+
+				clearChatHistory();
 
 				// Sets the height of the chat window relative to the board size
 				$('#chat').height($('#board').height() * 0.4);
@@ -608,8 +693,10 @@
 
 				// Makes the rematch panel visible
 				$('#gameOverPanel').css('display', 'block');
+				$('#opponentLeft').css('display', 'none');
 				$('#availableRematch').css('display', 'block');
 				$('#requestingRematch').css('display', 'none');
+				$('#findingNewMatch').css('display', 'none');
 
 				// Centers the panel on top of the board
 				centerGameOverPanel();
@@ -673,6 +760,7 @@
 					}
 				});
 
+				boardRendered = true;
 			}
 
 			// Gets the contents in the (x,y) position on the board
