@@ -10,4 +10,4 @@ Features:
 
 Implemented using socket.io for the real-time communication and wgo.js for the board graphics
 
-Hosted on http://www.pente.io
+Hosted on http://pente-online.herokuapp.com/
