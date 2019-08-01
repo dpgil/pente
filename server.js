@@ -11,6 +11,31 @@ var size = 19;					// board size
 
 var StateEnum = Object.freeze({EMPTY: 0, BLACK: 1, WHITE: -1});
 
+var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+var tagOrComment = new RegExp(
+    '<(?:'
+    // Comment body.
+    + '!--(?:(?:-*[^->])*--+|-?)'
+    // Special "raw text" elements whose content should be elided.
+    + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+    + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+    // Regular name
+    + '|/?[a-z]'
+    + tagBody
+    + ')>',
+    'gi');
+
+// For input santitation
+function removeTags(html) {
+  var oldHtml;
+  do {
+    oldHtml = html;
+    html = html.replace(tagOrComment, '');
+  } while (html !== oldHtml);
+  return html.replace(/</g, '&lt;');
+}
+
 app.set('port', process.env.PORT || 5000);
 server.listen(app.get('port'), function() {
 	console.log('Server is running on port ' + app.get('port'));
@@ -120,8 +145,9 @@ io.sockets.on('connection', function(socket) {
 	function sendMessageToOpponent(message) {
 		// Prevents crash
 		if (socket.id in socketIdToData) {
+			var sanitizedMessage = removeTags(message);
 			var opponent = socketIdToData[socket.id].opponent;
-			opponent.emit('new message', message);
+			opponent.emit('new message', sanitizedMessage);
 		}
 	}
 
